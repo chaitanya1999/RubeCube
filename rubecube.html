@@ -25,6 +25,9 @@
 				M=dimensions[0];
 				N=dimensions[1];
 				O=dimensions[2];
+				puzzleData = [];
+				animFrames=4;
+				animFPS=30;
 				canvas = document.getElementById("main");
 				canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
 				var engine = new BABYLON.Engine(canvas);
