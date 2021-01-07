@@ -1,0 +1,448 @@
+<html>
+	<head>
+		<script src='https://cdn.babylonjs.com/babylon.js'></script>
+		<script src='https://cdn.babylonjs.com/gui/babylon.gui.min.js'></script>
+		<script>
+			var camera;
+			var scene, canvas;
+			var keyDownFlag=false, animationFlag=false;;
+			var origin;
+			var dimensions=[3,3,4];
+			var M,N,O;
+			var puzzleData = [];
+			var animFrames = 4;
+			var animFPS = 30;
+			
+			let white = new BABYLON.Color4(1,1,1,1);
+			let yellow = new BABYLON.Color4(1,1,0,1);
+			let red = new BABYLON.Color4(1,0,0,1);
+			let orange = new BABYLON.Color4(1,0.64,0,1);
+			let green = new BABYLON.Color4(0,1,0,1);
+			let blue = new BABYLON.Color4(0,0,1,1);			
+			let dark = new BABYLON.Color4(0.05,0.05,0.05,1);			
+				
+			function afterLoad(){
+				M=dimensions[0];
+				N=dimensions[1];
+				O=dimensions[2];
+				canvas = document.getElementById("main");
+				canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
+				var engine = new BABYLON.Engine(canvas);
+				scene = new BABYLON.Scene(engine);
+				scene.clearColor = new BABYLON.Color3(0.6,0.6,0.6);
+				origin = new BABYLON.TransformNode("root");
+				function renderLoop(){
+					
+					scene.render();
+				}
+				engine.runRenderLoop(renderLoop);
+
+				camera = new BABYLON.ArcRotateCamera("Camera", 1, 1, 15, new BABYLON.Vector3(0,0,0), scene);
+				//camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3(10,10,10), scene);
+				camera.allowUpsideDown = true;
+				camera.lowerBetaLimit = null;
+				camera.upperBetaLimit = null;
+				camera.lowerRadiusLimit = 10 // how far in can you zoom
+				camera.upperRadiusLimit = 25
+				camera.panningSensibility = 0
+				camera.attachControl(canvas, false);
+				
+
+				//var light = new BABYLON.PointLight("light", new BABYLON.Vector3(10,10,0),scene);
+				//var light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(0, -1, 0), scene);
+				var light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 1, 0), scene);
+				var light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(1, 0, 0), scene);
+				var light3 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 0, 1), scene);
+				
+				
+				makePuzzle(scene);
+				let mouseDownFlag=[false,false,false];
+				let x,y;
+				let oldPickInfo;
+				scene.onPointerDown = function(evt,pickInfo){
+					mouseDownFlag[evt.button]=true;
+					x=evt.x;
+					y=evt.y;
+					oldPickInfo = pickInfo;
+					if(evt.button==0)console.log(pickInfo.faceId);
+				}
+				scene.onPointerUp = function(evt,pickInfo){
+					oldPickInfo=null;
+					mouseDownFlag[evt.button]=false;
+					if(evt.button==0 || evt.button==2){
+						let upvec = camera.position.clone();
+						//camera.upVector = upvec;
+					}
+				}
+				scene.onPointerMove = function(evt,pickInfo){
+					if(mouseDownFlag[2]){
+						/*let cx = camera.position._x + 3*(evt.x-x); 
+						let cy = camera.position._y + 3*(evt.y-y); 
+						camera.setPosition(new BABYLON.Vector3(cx,cy,15));
+						x=evt.x;y=evt.y;*/
+					} else if(mouseDownFlag[0] && oldPickInfo && oldPickInfo.pickedMesh && pickInfo.pickedMesh){
+						let oldMesh = oldPickInfo.pickedMesh, newMesh = pickInfo.pickedMesh;
+						if(oldMesh.id==newMesh.id){
+							if( (oldPickInfo.faceId-pickInfo.faceId==1 || oldPickInfo.faceId-pickInfo.faceId==-1)
+								&& Math.max(oldPickInfo.faceId,pickInfo.faceId)%2!=0)
+								{return;}
+							else if(oldPickInfo.faceId==pickInfo.faceId){return;}
+							//console.log('$$$$');
+							
+							let oldNormal = oldMesh.getFacetNormal(oldPickInfo.faceId);
+							let newNormal = newMesh.getFacetNormal(pickInfo.faceId);
+							
+							let rotVector = oldNormal.cross(newNormal);
+							let clockwise=true;
+							let axis='x',index=0;
+							//find clockwise
+							if(rotVector.x==-1){clockwise=false;rotVector.x=1;}
+							if(rotVector.y==-1){clockwise=false;rotVector.y=1;}
+							if(rotVector.z==-1){clockwise=false;rotVector.z=1;}
+							//find axis
+							if(rotVector.x==1)axis='x';
+							else if(rotVector.y==1)axis='y';
+							else if(rotVector.z==1)axis='z';
+							//find index 
+							if(axis=='x')index=oldMesh.position.x + (M-1)/2;
+							else if(axis=='y')index=oldMesh.position.y + (N-1)/2;
+							else if(axis=='z')index=oldMesh.position.z + (O-1)/2;
+							index = Math.round(index);
+							//console.log('$' + rotVector, oldNormal, newNormal, '|' + axis + " " + index);
+							oldPickInfo=null;
+							puzzleMove(axis,index,clockwise);
+						} else {
+							let clockwise=true, axis, index;
+							oldMesh.position.x = zerofy(oldMesh.position.x);
+							oldMesh.position.y = zerofy(oldMesh.position.y);
+							oldMesh.position.z = zerofy(oldMesh.position.z);
+							newMesh.position.x = zerofy(newMesh.position.x);
+							newMesh.position.y = zerofy(newMesh.position.y);
+							newMesh.position.z = zerofy(newMesh.position.z);
+							if(oldMesh.position.y==newMesh.position.y && oldMesh.position.z==newMesh.position.z){
+								let vector = oldMesh.getFacetNormal(oldPickInfo.faceId);
+								
+								if(vector.y==1 || vector.y==-1)axis='z';
+								else if(vector.z==1 || vector.z==-1)axis='y';
+								
+								if(axis=='y' && ( (oldMesh.position.x>newMesh.position.x && oldMesh.position.z==(O-1)/2)
+								|| (oldMesh.position.x<newMesh.position.x && oldMesh.position.z==-(O-1)/2) ))clockwise=false;
+								if(axis=='z' && (( oldMesh.position.x<newMesh.position.x && oldMesh.position.y==(N-1)/2 )
+								|| ( oldMesh.position.x>newMesh.position.x && oldMesh.position.y==-(N-1)/2 )))clockwise=false;
+								
+								if(axis=='y')index=oldMesh.position.y + (N-1)/2;
+								else if(axis=='z')index=oldMesh.position.z + (O-1)/2;
+								oldPickInfo=null;
+								puzzleMove(axis,index,clockwise);
+								
+							} else if(oldMesh.position.x==newMesh.position.x && oldMesh.position.z==newMesh.position.z){
+								let vector = oldMesh.getFacetNormal(oldPickInfo.faceId);
+								
+								if(vector.x==1 || vector.x==-1)axis='z';
+								else if(vector.z==1 || vector.z==-1)axis='x';
+								
+								if(axis=='x' && ( (oldMesh.position.y<newMesh.position.y && oldMesh.position.z==(O-1)/2)
+								|| (oldMesh.position.y>newMesh.position.y && oldMesh.position.z==-(O-1)/2) ))clockwise=false;
+								if(axis=='z' && (( oldMesh.position.y>newMesh.position.y && oldMesh.position.x==(M-1)/2 )
+								|| ( oldMesh.position.y<newMesh.position.y && oldMesh.position.x==-(M-1)/2 )))clockwise=false;
+								
+								if(axis=='x')index=oldMesh.position.x + (M-1)/2;
+								else if(axis=='z')index=oldMesh.position.z + (O-1)/2;
+								oldPickInfo=null;
+								puzzleMove(axis,index,clockwise);
+							} else if(oldMesh.position.x==newMesh.position.x && oldMesh.position.y==newMesh.position.y){
+								let vector = oldMesh.getFacetNormal(oldPickInfo.faceId);
+								
+								if(vector.x==1 || vector.x==-1)axis='y';
+								else if(vector.y==1 || vector.y==-1)axis='x';
+								
+								if(axis=='y' && ( (oldMesh.position.z>newMesh.position.z && oldMesh.position.x==-(M-1)/2)
+								|| (oldMesh.position.z<newMesh.position.z && oldMesh.position.x==(M-1)/2) ))clockwise=false;
+								if(axis=='x' && (( oldMesh.position.z>newMesh.position.z && oldMesh.position.y==(N-1)/2 )
+								|| ( oldMesh.position.z<newMesh.position.z && oldMesh.position.y==-(N-1)/2 )))clockwise=false;
+								
+								if(axis=='x')index=oldMesh.position.x + (M-1)/2;
+								else if(axis=='y')index=oldMesh.position.y + (N-1)/2;
+								oldPickInfo=null;
+								puzzleMove(axis,index,clockwise);
+							}
+						}
+					}
+				}
+				showWorldAxis(30);
+				window.addEventListener("pointerup", cameraAttachControl, false);
+				document.onkeydown = function(evt){
+					if(keyDownFlag || animationFlag) return;
+					
+					let mat=[];
+					if(evt.key=='f' || evt.key=='F' || evt.key=='b' || evt.key=='B'){			
+						puzzleMove('x',['f','F'].includes(evt.key) ? M-1 : 0,evt.key=='f' || evt.key=='B');
+					} else if(evt.key=='r' || evt.key=='R' || evt.key=='l' || evt.key=='L'){
+						puzzleMove('z',['r','R'].includes(evt.key) ? O-1 : 0,evt.key=='r' || evt.key=='L');
+					} else if(evt.key=='u' || evt.key=='U' || evt.key=='d' || evt.key=='D'){
+						puzzleMove('y',['u','U'].includes(evt.key) ? N-1 : 0,evt.key=='u' || evt.key=='D');
+					}
+				};
+				document.onkeyup = function(evt){
+					keyDownFlag=false;
+				}
+			}
+			function zerofy(num){
+				if(Math.abs(num)<0.5)return 0;
+				else return num;
+			}
+			function sleep(time) {
+				return new Promise(function (resolve, reject) {
+					setTimeout(function () {
+						resolve('ok');
+					}, time);
+				})
+			};
+			async function randomize(){
+				let moves=50;
+				animFrames = 1;
+				let axisIndexUB={'x': M, 'y': N, 'z': O};
+				for(let i=0;i<50;i++){
+					let axis = randomChoice(['x','y','z']);
+					let indexUB = axisIndexUB[axis];
+					puzzleMove(axis, Math.floor(Math.random() * indexUB), randomChoice([true,false]));
+					await sleep(100);
+				}
+				animFrames = 5;
+			}
+			function randomChoice(arr){
+				return arr[Math.floor(Math.random() * arr.length)];
+			}
+			function puzzleMove(rAxis,sliceIndex,clockwise){
+				const limit = Math.floor(sliceIndex);
+				console.log('MOVE : ' + rAxis, limit, clockwise);	
+				let mat=[];
+				//extract data here
+				if(rAxis=='x'){
+					for(let j=0;j<N;j++){mat[j]=[];}
+					for(let j=0;j<N;j++){
+						for(let k=0;k<O;k++){
+							mat[N-j-1][k]=puzzleData[limit][j][k];
+						}
+					}
+				} else if(rAxis=='y'){
+					for(let i=0;i<M;i++){
+						for(let k=0;k<O;k++){
+							if(!mat[i])mat[i]=[];
+							if(!puzzleData[i] || !puzzleData[i][limit] || !puzzleData[i][limit][k])continue;
+							mat[i][k] = puzzleData[i][limit][k];
+						}
+					}
+				} else {		//rAxis = 'z'
+					for(let i=0;i<M;i++){
+						for(let j=0;j<N;j++){
+						if(!mat[N-j-1])mat[N-j-1]=[];
+							if(!puzzleData[i] || !puzzleData[i][j] || !puzzleData[i][j][limit])continue;
+							mat[N-j-1][M-i-1] = puzzleData[i][j][limit];
+						}
+					}
+				}
+				
+				
+				//rotate
+				mat = rotatePuzzle(mat, clockwise, rAxis);
+				
+				//put back
+				if(rAxis=='x'){
+					for(let j=0;j<N;j++){
+						for(let k=0;k<O;k++){
+							puzzleData[limit][j][k]=mat[N-j-1][k];
+							//mat[N-j-1][k].updateFacetData();
+						}
+					}
+				} else if(rAxis=='y'){
+					for(let i=0;i<M;i++){
+						for(let k=0;k<O;k++){
+							if(!puzzleData[i] || !puzzleData[i][limit] || !puzzleData[i][limit][k])continue;
+							puzzleData[i][limit][k] = 
+							mat[i][k];
+							//mat[i][k].updateFacetData();
+						}
+					}
+				} else {		//rAxis = 'z'
+					for(let i=0;i<M;i++){
+						for(let j=0;j<N;j++){
+							if(!puzzleData[i] || !puzzleData[i][j] || !puzzleData[i][j][limit] || !mat[N-j-1])continue;
+							puzzleData[i][j][limit] = 
+							mat[N-j-1][M-i-1]
+							//mat[N-j-1][M-i-1].updateFacetData();
+						}
+					}
+				}
+				for(let a of puzzleData)for(let b of a)for(let cc of b)if(cc)cc.updateFacetData();
+			}
+			
+			function rotatePuzzle(mat,clockwise,axis){
+				//rotate
+				let pivot = new BABYLON.TransformNode("root");
+				pivot.position = new BABYLON.Vector3(0,0,0);
+				
+				new Promise(function(resolve,reject){
+					let count=0;
+					for(let j=0;j<N;j++){
+						for(let k=0;k<O;k++){
+							count++;
+							if(!mat[j] || !mat[j][k])continue;
+							let box = mat[j][k];
+							box.parent = pivot;					
+							if(mat.length!=mat[0].length){
+								if(clockwise)box.myRotation[axis]+=Math.PI;
+								else box.myRotation[axis]-=Math.PI;
+							}
+							else if(clockwise)box.myRotation[axis]+=Math.PI/2;
+							else box.myRotation[axis]-=Math.PI/2;
+						}
+					}
+					if(count==N*O)resolve(mat);
+				}).then(function(value){
+					//console.log(pivot);
+					let pivotRot;
+					if(mat.length!=mat[0].length){
+						pivotRot = Math.PI;
+						if(clockwise)pivotRot = Math.PI;
+						else  pivotRot = -Math.PI;
+					}
+					else if(clockwise)pivotRot = Math.PI/2;
+					else  pivotRot = -Math.PI/2;
+					//pivot.rotation[axis]=pivotRot;
+					animationFlag=true;
+					BABYLON.Animation.CreateAndStartAnimation("rotation", pivot, "rotation."+axis, animFPS, animFrames, pivot.rotation[axis], pivotRot, 0,null,()=>{
+						let BabylonAxes = {'x': BABYLON.Axis.X, 'y': BABYLON.Axis.Y, 'z': BABYLON.Axis.Z};
+						let count=pivot.getChildren().length;
+						for(let bx of pivot.getChildren()){
+							let pos = bx.getAbsolutePosition().clone();
+							bx.parent=null;
+							bx.position = pos;
+							//let rot = bx.rotation;
+							for(let ax in bx.myRotation){
+								//console.log(ax, bx.myRotation);
+								//rot[axis] += bx.myRotation[axis];
+								bx.rotate(BabylonAxes[ax],bx.myRotation[ax],BABYLON.Space.WORLD);
+								bx.myRotation[ax]=0;
+							}
+							count--;
+						}
+						if(count==0)animationFlag=false;
+					});
+				});
+				mat = rotate2DMatrix(mat,clockwise);
+				return mat;
+			}
+			
+			function makePuzzle(scene){
+				for(let i=0;i<M;i++){
+					puzzleData[i]=[];
+					for(let j=0;j<N;j++){
+						puzzleData[i][j]=[];
+						for(let k=0;k<O;k++){
+							if(i>0 && i<M-1 && j>0 && j<N-1 && k>0 && k<O-1)continue;
+							let a=i-(M-1)/2, b = j-(N-1)/2, c = k-(O-1)/2;
+							let box = BABYLON.MeshBuilder.CreateBox(`box ${a} ${b} ${c}`, {faceColors:[white,yellow,red,orange,green,blue]}, scene);
+							box.enableEdgesRendering(); 
+							box.edgesWidth = 10.0;
+							box.edgesColor = new BABYLON.Color4(0,0,0,1);
+							box.position = new BABYLON.Vector3(a,b,c);
+							puzzleData[i][j][k] = box;
+							box.actionManager = new BABYLON.ActionManager(scene);
+							box.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, onPieceClick, 0));
+							box.myRotation={x:0,y:0,z:0};
+						}
+					}
+				}
+			}
+			
+			function onPieceClick(a){
+				camera.detachControl(canvas);
+			}
+			function cameraAttachControl(){
+				camera.attachControl(canvas,true);
+			}
+			function rotate2DMatrix(mat,clockwise){
+				function rotate(matrix) {          // function statement
+					const N = matrix.length - 1;   // use a constant
+					// use arrow functions and nested map;
+					const result = matrix.map((row, i) => 
+						 row.map((val, j) => matrix[N - j][i])
+					);
+					matrix.length = 0;       // hold original array reference
+					matrix.push(...result);  // Spread operator
+					return matrix;
+				}
+				if(mat.length!=mat[0].length){
+					let A=mat.length;
+					let B=mat[0].length;
+					let ret=[];
+					for(let i=0;i<A;i++){
+						ret[i]=[];
+						for(let j=0;j<B;j++){
+							ret[i][j] = mat[A-i-1][B-j-1];
+						}
+					}
+					return ret;
+				}
+				else if(clockwise) return rotate(mat);
+				else return rotate(rotate(rotate(mat)));
+			}
+			function showWorldAxis(size) {
+				var makeTextPlane = function(text, color, size) {
+					var dynamicTexture = new BABYLON.DynamicTexture("DynamicTexture", 50, scene, true);
+					dynamicTexture.hasAlpha = true;
+					dynamicTexture.drawText(text, 5, 40, "bold 36px Arial", color , "transparent", true);
+					var plane = BABYLON.Mesh.CreatePlane("TextPlane", size, scene, true);
+					plane.material = new BABYLON.StandardMaterial("TextPlaneMaterial", scene);
+					plane.material.backFaceCulling = false;
+					plane.material.specularColor = new BABYLON.Color3(0, 0, 0);
+					plane.material.diffuseTexture = dynamicTexture;
+					return plane;
+				};
+				var axisX = BABYLON.Mesh.CreateLines("axisX", [ 
+				  BABYLON.Vector3.Zero(), new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, 0.05 * size, 0), 
+				  new BABYLON.Vector3(size, 0, 0), new BABYLON.Vector3(size * 0.95, -0.05 * size, 0)
+				  ], scene);
+				axisX.color = new BABYLON.Color3(1, 0, 0);
+				var xChar = makeTextPlane("X", "red", size / 10);
+				xChar.position = new BABYLON.Vector3(0.9 * size, -0.05 * size, 0);
+				var axisY = BABYLON.Mesh.CreateLines("axisY", [
+					BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( -0.05 * size, size * 0.95, 0), 
+					new BABYLON.Vector3(0, size, 0), new BABYLON.Vector3( 0.05 * size, size * 0.95, 0)
+					], scene);
+				axisY.color = new BABYLON.Color3(0, 1, 0);
+				var yChar = makeTextPlane("Y", "green", size / 10);
+				yChar.position = new BABYLON.Vector3(0, 0.9 * size, -0.05 * size);
+				var axisZ = BABYLON.Mesh.CreateLines("axisZ", [
+					BABYLON.Vector3.Zero(), new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0 , -0.05 * size, size * 0.95),
+					new BABYLON.Vector3(0, 0, size), new BABYLON.Vector3( 0, 0.05 * size, size * 0.95)
+					], scene);
+				axisZ.color = new BABYLON.Color3(0, 0, 1);
+				var zChar = makeTextPlane("Z", "blue", size / 10);
+				zChar.position = new BABYLON.Vector3(0, 0.05 * size, 0.9 * size);
+				
+				axisX.isPickable=false;
+				axisY.isPickable=false;
+				axisZ.isPickable=false;
+			};
+			function setDimensions(){
+				try{
+					let dimen = document.getElementById('dimen').value.split(' ');
+					dimensions = [parseInt(dimen[0]),parseInt(dimen[1]),parseInt(dimen[2])];
+					scene.dispose();
+					afterLoad();
+				}catch(err){alert(err);}
+			}
+		</script>
+		<title>RubeCube</title>
+	</head>
+	<body onload='afterLoad()'>
+		<div id='hud'>
+			<button value='Randomize' onclick='randomize()'>Randomize</button>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			Dimensions: <input type='text' id='dimen' /><button onclick='setDimensions()'>Set Dimensions</button>
+		</div>
+		<canvas id="main" style='width:100%;height:100%;'></canvas>
+	</body>
+</html>
