@@ -26,7 +26,13 @@
 			let orange = new BABYLON.Color4(1,0.64,0,1);
 			let green = new BABYLON.Color4(0,1,0,1);
 			let blue = new BABYLON.Color4(0,0,1,1);			
-			let dark = new BABYLON.Color4(0.05,0.05,0.05,1);			
+			let dark = new BABYLON.Color4(0.05,0.05,0.05,1);		
+			
+			var isDragging = false;
+			var previousMousePosition = {
+				x: 0,
+				y: 0
+			};
 				
 			function afterLoad(){
 				M=dimensions[0];
@@ -67,7 +73,7 @@
 				}
 				engine.runRenderLoop(renderLoop);
 
-				camera = new BABYLON.ArcRotateCamera("Camera", 1, 1, 15, new BABYLON.Vector3(0,0,0), scene);
+				camera = new BABYLON.ArcRotateCamera("Camera", Math.PI/2, Math.PI/2, 15, new BABYLON.Vector3(0,0,0), scene);
 				//camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3(10,10,10), scene);
 				//camera.target = origin;
 				//camera.allowUpsideDown = true;
@@ -78,7 +84,7 @@
 				camera.panningSensibility = 0
 				camera.noRotationConstraint=true;
 				camera.updateUpVectorFromRotation=true;
-				camera.attachControl(canvas, false);
+				//camera.attachControl(canvas, false);
 				
 
 				//var light = new BABYLON.PointLight("light", new BABYLON.Vector3(10,10,0),scene);
@@ -87,6 +93,7 @@
 				var light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(1, 0, 0), scene);
 				var light3 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 0, 1), scene);
 				
+				origin.rotate(BABYLON.Axis.X, 0, BABYLON.Space.WORLD);
 				
 				makePuzzle(scene);
 				let mouseDownFlag=[false,false,false];
@@ -98,19 +105,47 @@
 					y=evt.y;
 					oldPickInfo = pickInfo;
 					if(evt.button==0)console.log(pickInfo.faceId);
+					else if(evt.button==2){
+						isDragging = true;
+						previousMousePosition = {
+							x: evt.offsetX,
+							y: evt.offsetY
+						};
+					}
 				}
 				scene.onPointerUp = function(evt,pickInfo){
 					oldPickInfo=null;
 					mouseDownFlag[evt.button]=false;
-					if(evt.button==0 || evt.button==2){
-						//let oldpos = camera.position.clone();
-						//camera.upVector = origin.getDirection(new BABYLON.Vector3(0,1,0));
-						//camera.position = oldpos;
-						//camera.alpha=1;camera.beta=1;
+					if(evt.button==2){
+						isDragging = false;
+						previousMousePosition = {
+							x: 0,
+							y: 0
+						};
 					}
 				}
 				scene.onPointerMove = function(evt,pickInfo){
 					if(mouseDownFlag[2]){
+						
+						var deltaMove = {
+							x: evt.offsetX-previousMousePosition.x,
+							y: evt.offsetY-previousMousePosition.y
+						};
+						if(isDragging) {
+							var deltaRotationQuaternion = BABYLON.Quaternion
+								.FromEulerAngles(
+									BABYLON.Tools.ToRadians(deltaMove.y * 1),
+									BABYLON.Tools.ToRadians(deltaMove.x * -1),
+									0,
+								);
+							
+							origin.rotationQuaternion = deltaRotationQuaternion.multiply(origin.rotationQuaternion);
+						}
+						
+						previousMousePosition = {
+							x: evt.offsetX,
+							y: evt.offsetY
+						};
 						
 					} else if(mouseDownFlag[0] && oldPickInfo && oldPickInfo.pickedMesh && pickInfo.pickedMesh){
 						let oldMesh = oldPickInfo.pickedMesh, newMesh = pickInfo.pickedMesh;
@@ -239,7 +274,7 @@
 						}
 					}
 				}
-				showWorldAxis(30);
+				//showWorldAxis(30);
 				window.addEventListener("pointerup", cameraAttachControl, false);
 				document.onkeydown = function(evt){
 					if(keyDownFlag || animationFlag) return;
@@ -423,7 +458,7 @@
 							box.position = new BABYLON.Vector3(a,b,c);
 							puzzleData[i][j][k] = box;
 							box.actionManager = new BABYLON.ActionManager(scene);
-							box.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, onPieceClick, 0));
+							//box.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnLeftPickTrigger, onPieceClick, 0));
 							box.myRotation={x:0,y:0,z:0};
 							box.parent = origin;
 						}
@@ -432,10 +467,10 @@
 			}
 			
 			function onPieceClick(a){
-				camera.detachControl(canvas);
+				//camera.detachControl(canvas);
 			}
 			function cameraAttachControl(){
-				camera.attachControl(canvas,true);
+				//camera.attachControl(canvas,true);
 			}
 			function rotate2DMatrix(mat,clockwise){
 				function rotate(matrix) {          // function statement
