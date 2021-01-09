@@ -89,11 +89,12 @@
 
 				//var light = new BABYLON.PointLight("light", new BABYLON.Vector3(10,10,0),scene);
 				//var light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(0, -1, 0), scene);
-				var light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 1, 0), scene);
-				var light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(1, 0, 0), scene);
-				var light3 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 0, 1), scene);
+				var light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(1,1,1), scene);
+				var light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(-1,-1,-1), scene);
+				//var light3 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 0, 1), scene);
 				
-				origin.rotate(BABYLON.Axis.X, 0, BABYLON.Space.WORLD);
+				origin.rotate(BABYLON.Axis.X, Math.PI/4, BABYLON.Space.WORLD);
+				origin.rotate(BABYLON.Axis.Y, Math.PI/4, BABYLON.Space.WORLD);
 				
 				makePuzzle(scene);
 				let mouseDownFlag=[0,0,0];
@@ -307,10 +308,13 @@
 						puzzleMove('z',['r','R'].includes(evt.key) ? O-1 : 0,evt.key=='r' || evt.key=='L');
 					} else if(evt.key=='u' || evt.key=='U' || evt.key=='d' || evt.key=='D'){
 						puzzleMove('y',['u','U'].includes(evt.key) ? N-1 : 0,evt.key=='u' || evt.key=='D');
+					} else if(evt.key=='z'){
+						multiFlag = true;
 					}
 				};
 				document.onkeyup = function(evt){
 					keyDownFlag=false;
+					if(evt.key=='z')multiFlag=false;
 				}
 			}
 			function floatEquals(f1,f2){
@@ -565,19 +569,27 @@
 					afterLoad();
 				}catch(err){alert(err);}
 			}
-			function rot(){
-				origin.rotate(BABYLON.Axis.X, Math.PI/4, BABYLON.Space.WORLD);
-			}
 		</script>
+		<style>
+			.center{
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				height: 200px;
+				border: 3px solid green;
+				font-size:20px;
+			}
+		</style>
+		<link rel="icon" href="favicon.ico" type="image/x-icon">   
 		<title>RubeCube</title>
+		
 	</head>
 	<body onload='afterLoad()'>
-		<div id='hud' style='height:5%'>
+		<div id='hud' style='height:5%' class='center'>
 			<button value='Randomize' onclick='randomize()'>Randomize</button>
 			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 			Dimensions: <input type='text' id='dimen' /><button onclick='setDimensions()'>Set Dimensions</button>
 			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-			<button onclick='rot()'>ROTATE</button>
 		</div>
 		<canvas id="main" style='width:100%;height:95%;'></canvas>
 	</body>
