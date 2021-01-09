@@ -106,6 +106,8 @@
 					oldPickInfo = pickInfo;
 					if(evt.button==0)console.log(pickInfo.faceId);
 					else if(evt.button==2){
+					}
+					if(!pickInfo.pickedMesh){
 						isDragging = true;
 						previousMousePosition = {
 							x: evt.offsetX,
@@ -116,36 +118,19 @@
 				scene.onPointerUp = function(evt,pickInfo){
 					oldPickInfo=null;
 					mouseDownFlag[evt.button]=false;
+					isDragging = false;
+					previousMousePosition = {
+						x: 0,
+						y: 0
+					};
 					if(evt.button==2){
-						isDragging = false;
-						previousMousePosition = {
-							x: 0,
-							y: 0
-						};
+						
 					}
 				}
 				scene.onPointerMove = function(evt,pickInfo){
 					if(mouseDownFlag[2]){
 						
-						var deltaMove = {
-							x: evt.offsetX-previousMousePosition.x,
-							y: evt.offsetY-previousMousePosition.y
-						};
-						if(isDragging) {
-							var deltaRotationQuaternion = BABYLON.Quaternion
-								.FromEulerAngles(
-									BABYLON.Tools.ToRadians(deltaMove.y * 1),
-									BABYLON.Tools.ToRadians(deltaMove.x * -1),
-									0,
-								);
-							
-							origin.rotationQuaternion = deltaRotationQuaternion.multiply(origin.rotationQuaternion);
-						}
 						
-						previousMousePosition = {
-							x: evt.offsetX,
-							y: evt.offsetY
-						};
 						
 					} else if(mouseDownFlag[0] && oldPickInfo && oldPickInfo.pickedMesh && pickInfo.pickedMesh){
 						let oldMesh = oldPickInfo.pickedMesh, newMesh = pickInfo.pickedMesh;
@@ -272,6 +257,26 @@
 								puzzleMove(axis,index,clockwise);
 							}
 						}
+					} else if(mouseDownFlag[0]){
+						var deltaMove = {
+							x: evt.offsetX-previousMousePosition.x,
+							y: evt.offsetY-previousMousePosition.y
+						};
+						if(isDragging) {
+							var deltaRotationQuaternion = BABYLON.Quaternion
+								.FromEulerAngles(
+									BABYLON.Tools.ToRadians(deltaMove.y * 1),
+									BABYLON.Tools.ToRadians(deltaMove.x * -1),
+									0,
+								);
+							
+							origin.rotationQuaternion = deltaRotationQuaternion.multiply(origin.rotationQuaternion);
+						}
+						
+						previousMousePosition = {
+							x: evt.offsetX,
+							y: evt.offsetY
+						};
 					}
 				}
 				//showWorldAxis(30);
