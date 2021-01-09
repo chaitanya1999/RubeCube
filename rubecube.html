@@ -12,12 +12,13 @@
 			var camera;
 			var scene, canvas;
 			var keyDownFlag=false, animationFlag=false;;
-			var origin;
-			var dimensions=[3,3,4];
+			var origin,originInv;
+			var dimensions=[2,2,2];
 			var M,N,O;
 			var puzzleData = [];
-			var animFrames = 4;
-			var animFPS = 30;
+			var animFrames = 4, animFPS = 30;
+			var cameraPosNode,cameraUpVecNode,initFlag=false;
+			
 			
 			let white = new BABYLON.Color4(1,1,1,1);
 			let yellow = new BABYLON.Color4(1,1,0,1);
@@ -39,26 +40,44 @@
 				var engine = new BABYLON.Engine(canvas);
 				scene = new BABYLON.Scene(engine);
 				scene.clearColor = new BABYLON.Color3(0.6,0.6,0.6);
-				origin = new BABYLON.TransformNode("root");
+				origin = new BABYLON.TransformNode("origin");
+				originInv = new BABYLON.TransformNode("originInv");
 				origin.position = new BABYLON.Vector3(0,0,0);
+				originInv.position = new BABYLON.Vector3(0,0,0);
+				//origin.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
+				
+				//cameraPosNode = new BABYLON.TransformNode("cameraPosNode");
+				//cameraUpVecNode = BABYLON.MeshBuilder.CreateBox(`zxcvzxcv`, {faceColors:[dark,dark,red,dark,dark,dark]}, scene);;
+				//cameraUpVecNode.position = new BABYLON.Vector3(-10,0,-10);
+				
 				
 				scene.clearColor = new BABYLON.Color4(0,0,255,0.3);
 				
 				function renderLoop(){
-					
 					scene.render();
+					/*if(!initFlag){
+						initFlag=true;
+						cameraPosNode.position = camera.position.clone();
+						cameraUpVecNode.position = new BABYLON.Vector3(-camera.position.x,1,-camera.position.z);
+						cameraUpVecNode.parent = cameraPosNode;
+					}
+					cameraPosNode.position = camera.position.clone();
+					cameraPosNode.rotation.y = camera.alpha;
+					*/
 				}
 				engine.runRenderLoop(renderLoop);
 
 				camera = new BABYLON.ArcRotateCamera("Camera", 1, 1, 15, new BABYLON.Vector3(0,0,0), scene);
 				//camera = new BABYLON.FreeCamera("Camera", new BABYLON.Vector3(10,10,10), scene);
 				//camera.target = origin;
-				camera.allowUpsideDown = true;
+				//camera.allowUpsideDown = true;
 				camera.lowerBetaLimit = null;
 				camera.upperBetaLimit = null;
 				camera.lowerRadiusLimit = 10 // how far in can you zoom
 				camera.upperRadiusLimit = 25
 				camera.panningSensibility = 0
+				camera.noRotationConstraint=true;
+				camera.updateUpVectorFromRotation=true;
 				camera.attachControl(canvas, false);
 				
 
@@ -84,16 +103,15 @@
 					oldPickInfo=null;
 					mouseDownFlag[evt.button]=false;
 					if(evt.button==0 || evt.button==2){
-						let upvec = camera.position.clone();
-						//camera.upVector = upvec;
+						//let oldpos = camera.position.clone();
+						//camera.upVector = origin.getDirection(new BABYLON.Vector3(0,1,0));
+						//camera.position = oldpos;
+						//camera.alpha=1;camera.beta=1;
 					}
 				}
 				scene.onPointerMove = function(evt,pickInfo){
 					if(mouseDownFlag[2]){
-						/*let cx = camera.position._x + 3*(evt.x-x); 
-						let cy = camera.position._y + 3*(evt.y-y); 
-						camera.setPosition(new BABYLON.Vector3(cx,cy,15));
-						x=evt.x;y=evt.y;*/
+						
 					} else if(mouseDownFlag[0] && oldPickInfo && oldPickInfo.pickedMesh && pickInfo.pickedMesh){
 						let oldMesh = oldPickInfo.pickedMesh, newMesh = pickInfo.pickedMesh;
 						if(oldMesh.id==newMesh.id){
@@ -103,10 +121,28 @@
 							else if(oldPickInfo.faceId==pickInfo.faceId){return;}
 							//console.log('$$$$');
 							
-							let oldNormal = oldMesh.getFacetNormal(oldPickInfo.faceId);
-							let newNormal = newMesh.getFacetNormal(pickInfo.faceId);
+							
+							qt = origin.rotationQuaternion.clone();
+							qt.x=-qt.x;qt.y=-qt.y;qt.z=-qt.z;
+							originInv.rotationQuaternion = qt;
+							
+							
+							let oldNormal = originInv.getDirection(oldMesh.getFacetNormal(oldPickInfo.faceId));
+							let newNormal = originInv.getDirection(newMesh.getFacetNormal(pickInfo.faceId));
+							
+							
+							oldNormal.x = Math.sign(oldNormal.x)*Math.round(Math.abs(oldNormal.x));
+							oldNormal.y = Math.sign(oldNormal.y)*Math.round(Math.abs(oldNormal.y));
+							oldNormal.z = Math.sign(oldNormal.z)*Math.round(Math.abs(oldNormal.z));
+							
+							newNormal.x = Math.sign(newNormal.x)*Math.round(Math.abs(newNormal.x));
+							newNormal.y = Math.sign(newNormal.y)*Math.round(Math.abs(newNormal.y));
+							newNormal.z = Math.sign(newNormal.z)*Math.round(Math.abs(newNormal.z));
+							
+							console.log('$#$# ' + oldNormal + " | " + newNormal);
 							
 							let rotVector = oldNormal.cross(newNormal);
+							console.log("#$#$ " + rotVector);
 							let clockwise=true;
 							let axis='x',index=0;
 							//find clockwise
@@ -133,47 +169,67 @@
 							newMesh.position.x = zerofy(newMesh.position.x);
 							newMesh.position.y = zerofy(newMesh.position.y);
 							newMesh.position.z = zerofy(newMesh.position.z);
-							if(oldMesh.position.y==newMesh.position.y && oldMesh.position.z==newMesh.position.z){
-								let vector = oldMesh.getFacetNormal(oldPickInfo.faceId);
+							
+							/*oldMesh.position.x = Math.sign(oldMesh.position.x)*Math.round(Math.abs(oldMesh.position.x));
+							oldMesh.position.y = Math.sign(oldMesh.position.y)*Math.round(Math.abs(oldMesh.position.y));
+							oldMesh.position.z = Math.sign(oldMesh.position.z)*Math.round(Math.abs(oldMesh.position.z));
+							
+							newMesh.position.x = Math.sign(newMesh.position.x)*Math.round(Math.abs(newMesh.position.x));
+							newMesh.position.y = Math.sign(newMesh.position.y)*Math.round(Math.abs(newMesh.position.y));
+							newMesh.position.z = Math.sign(newMesh.position.z)*Math.round(Math.abs(newMesh.position.z));
+							*/
+							/*newNormal.x = Math.sign(newNormal.x)*Math.round(Math.abs(newNormal.x));
+							newNormal.y = Math.sign(newNormal.y)*Math.round(Math.abs(newNormal.y));
+							newNormal.z = Math.sign(newNormal.z)*Math.round(Math.abs(newNormal.z));*/
+							
+							qt = origin.rotationQuaternion.clone();
+							qt.x=-qt.x;qt.y=-qt.y;qt.z=-qt.z;
+							originInv.rotationQuaternion = qt;
+							let vector = originInv.getDirection(oldMesh.getFacetNormal(oldPickInfo.faceId));
+							vector.x = Math.sign(vector.x)*Math.round(Math.abs(vector.x));
+							vector.y = Math.sign(vector.y)*Math.round(Math.abs(vector.y));
+							vector.z = Math.sign(vector.z)*Math.round(Math.abs(vector.z));
+							
+							console.log(oldMesh.position , " || " , newMesh.position);
+							
+							if(floatEquals(oldMesh.position.y,newMesh.position.y) && floatEquals(oldMesh.position.z,newMesh.position.z)){
 								
 								if(vector.y==1 || vector.y==-1)axis='z';
 								else if(vector.z==1 || vector.z==-1)axis='y';
 								
-								if(axis=='y' && ( (oldMesh.position.x>newMesh.position.x && oldMesh.position.z==(O-1)/2)
-								|| (oldMesh.position.x<newMesh.position.x && oldMesh.position.z==-(O-1)/2) ))clockwise=false;
-								if(axis=='z' && (( oldMesh.position.x<newMesh.position.x && oldMesh.position.y==(N-1)/2 )
-								|| ( oldMesh.position.x>newMesh.position.x && oldMesh.position.y==-(N-1)/2 )))clockwise=false;
+								if(axis=='y' && ( (oldMesh.position.x>newMesh.position.x && floatEquals(oldMesh.position.z,(O-1)/2))
+								|| (oldMesh.position.x<newMesh.position.x && floatEquals(oldMesh.position.z, -(O-1)/2) ) ))clockwise=false;
+								if(axis=='z' && (( oldMesh.position.x<newMesh.position.x && floatEquals(oldMesh.position.y, (N-1)/2) )
+								|| ( oldMesh.position.x>newMesh.position.x && floatEquals(oldMesh.position.y,-(N-1)/2) )))clockwise=false;
 								
 								if(axis=='y')index=oldMesh.position.y + (N-1)/2;
 								else if(axis=='z')index=oldMesh.position.z + (O-1)/2;
 								oldPickInfo=null;
 								puzzleMove(axis,index,clockwise);
 								
-							} else if(oldMesh.position.x==newMesh.position.x && oldMesh.position.z==newMesh.position.z){
-								let vector = oldMesh.getFacetNormal(oldPickInfo.faceId);
+							} else if(floatEquals(oldMesh.position.x,newMesh.position.x) && floatEquals(oldMesh.position.z,newMesh.position.z)){
 								
 								if(vector.x==1 || vector.x==-1)axis='z';
 								else if(vector.z==1 || vector.z==-1)axis='x';
 								
-								if(axis=='x' && ( (oldMesh.position.y<newMesh.position.y && oldMesh.position.z==(O-1)/2)
-								|| (oldMesh.position.y>newMesh.position.y && oldMesh.position.z==-(O-1)/2) ))clockwise=false;
-								if(axis=='z' && (( oldMesh.position.y>newMesh.position.y && oldMesh.position.x==(M-1)/2 )
-								|| ( oldMesh.position.y<newMesh.position.y && oldMesh.position.x==-(M-1)/2 )))clockwise=false;
+								if(axis=='x' && ( (oldMesh.position.y<newMesh.position.y && floatEquals(oldMesh.position.z,(O-1)/2))
+								|| (oldMesh.position.y>newMesh.position.y && floatEquals(oldMesh.position.z,-(O-1)/2)) ))clockwise=false;
+								if(axis=='z' && (( oldMesh.position.y>newMesh.position.y && floatEquals(oldMesh.position.x,(M-1)/2) )
+								|| ( oldMesh.position.y<newMesh.position.y && floatEquals(oldMesh.position.x,-(M-1)/2) )))clockwise=false;
 								
 								if(axis=='x')index=oldMesh.position.x + (M-1)/2;
 								else if(axis=='z')index=oldMesh.position.z + (O-1)/2;
 								oldPickInfo=null;
 								puzzleMove(axis,index,clockwise);
-							} else if(oldMesh.position.x==newMesh.position.x && oldMesh.position.y==newMesh.position.y){
-								let vector = oldMesh.getFacetNormal(oldPickInfo.faceId);
+							} else if(floatEquals(oldMesh.position.x,newMesh.position.x) && floatEquals(oldMesh.position.y,newMesh.position.y)){
 								
 								if(vector.x==1 || vector.x==-1)axis='y';
 								else if(vector.y==1 || vector.y==-1)axis='x';
 								
-								if(axis=='y' && ( (oldMesh.position.z>newMesh.position.z && oldMesh.position.x==-(M-1)/2)
-								|| (oldMesh.position.z<newMesh.position.z && oldMesh.position.x==(M-1)/2) ))clockwise=false;
-								if(axis=='x' && (( oldMesh.position.z>newMesh.position.z && oldMesh.position.y==(N-1)/2 )
-								|| ( oldMesh.position.z<newMesh.position.z && oldMesh.position.y==-(N-1)/2 )))clockwise=false;
+								if(axis=='y' && ( (oldMesh.position.z>newMesh.position.z && floatEquals(oldMesh.position.x, -(M-1)/2) )
+								|| (oldMesh.position.z<newMesh.position.z && floatEquals(oldMesh.position.x,(M-1)/2) ) ))clockwise=false;
+								if(axis=='x' && (( oldMesh.position.z>newMesh.position.z && floatEquals(oldMesh.position.y,(N-1)/2) )
+								|| ( oldMesh.position.z<newMesh.position.z && floatEquals(oldMesh.position.y,-(N-1)/2) )))clockwise=false;
 								
 								if(axis=='x')index=oldMesh.position.x + (M-1)/2;
 								else if(axis=='y')index=oldMesh.position.y + (N-1)/2;
@@ -201,8 +257,11 @@
 					keyDownFlag=false;
 				}
 			}
+			function floatEquals(f1,f2){
+				return Math.abs(f1-f2)<0.01;
+			}
 			function zerofy(num){
-				if(Math.abs(num)<0.5)return 0;
+				if(Math.abs(num)<0.49)return 0;
 				else return num;
 			}
 			function sleep(time) {
@@ -228,7 +287,7 @@
 				return arr[Math.floor(Math.random() * arr.length)];
 			}
 			function puzzleMove(rAxis,sliceIndex,clockwise){
-				const limit = Math.floor(sliceIndex);
+				const limit = Math.round(sliceIndex);
 				console.log('MOVE : ' + rAxis, limit, clockwise);	
 				let mat=[];
 				//extract data here
@@ -295,6 +354,7 @@
 				//rotate
 				let pivot = new BABYLON.TransformNode("root");
 				pivot.position = new BABYLON.Vector3(0,0,0);
+				pivot.parent = origin;
 				
 				new Promise(function(resolve,reject){
 					let count=0;
@@ -330,13 +390,13 @@
 						let count=pivot.getChildren().length;
 						for(let bx of pivot.getChildren()){
 							let pos = bx.getAbsolutePosition().clone();
-							bx.parent=null;
-							bx.position = pos;
+							bx.parent=origin;
+							bx.setAbsolutePosition(pos);
 							//let rot = bx.rotation;
 							for(let ax in bx.myRotation){
 								//console.log(ax, bx.myRotation);
 								//rot[axis] += bx.myRotation[axis];
-								bx.rotate(BabylonAxes[ax],bx.myRotation[ax],BABYLON.Space.WORLD);
+								bx.rotate(origin.getDirection(BabylonAxes[ax]),bx.myRotation[ax],BABYLON.Space.WORLD);
 								bx.myRotation[ax]=0;
 							}
 							count--;
@@ -449,6 +509,9 @@
 					afterLoad();
 				}catch(err){alert(err);}
 			}
+			function rot(){
+				origin.rotate(BABYLON.Axis.X, Math.PI/4, BABYLON.Space.WORLD);
+			}
 		</script>
 		<title>RubeCube</title>
 	</head>
@@ -457,6 +520,8 @@
 			<button value='Randomize' onclick='randomize()'>Randomize</button>
 			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 			Dimensions: <input type='text' id='dimen' /><button onclick='setDimensions()'>Set Dimensions</button>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<button onclick='rot()'>ROTATE</button>
 		</div>
 		<canvas id="main" style='width:100%;height:95%;'></canvas>
 	</body>
