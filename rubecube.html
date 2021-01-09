@@ -96,11 +96,13 @@
 				origin.rotate(BABYLON.Axis.X, 0, BABYLON.Space.WORLD);
 				
 				makePuzzle(scene);
-				let mouseDownFlag=[false,false,false];
+				let mouseDownFlag=[0,0,0];
 				let x,y;
 				let oldPickInfo;
+				let multiFlag=false;
 				scene.onPointerDown = function(evt,pickInfo){
-					mouseDownFlag[evt.button]=true;
+					if(mouseDownFlag[evt.button]>0)multiFlag=true;
+					mouseDownFlag[evt.button]++;
 					x=evt.x;
 					y=evt.y;
 					oldPickInfo = pickInfo;
@@ -117,7 +119,8 @@
 				}
 				scene.onPointerUp = function(evt,pickInfo){
 					oldPickInfo=null;
-					mouseDownFlag[evt.button]=false;
+					mouseDownFlag[evt.button]--;
+					if(mouseDownFlag[evt.button]<=1)multiFlag=false;
 					isDragging = false;
 					previousMousePosition = {
 						x: 0,
@@ -263,14 +266,27 @@
 							y: evt.offsetY-previousMousePosition.y
 						};
 						if(isDragging) {
-							var deltaRotationQuaternion = BABYLON.Quaternion
+							var deltaRotationQuaternion = null;
+							if(multiFlag){
+								deltaRotationQuaternion = BABYLON.Quaternion
+									.FromEulerAngles(
+										0,0,
+										BABYLON.Tools.ToRadians(deltaMove.y * 0.5)
+									);
+							}
+							else deltaRotationQuaternion = BABYLON.Quaternion
 								.FromEulerAngles(
-									BABYLON.Tools.ToRadians(deltaMove.y * 1),
-									BABYLON.Tools.ToRadians(deltaMove.x * -1),
+									BABYLON.Tools.ToRadians(deltaMove.y * 0.5),
+									BABYLON.Tools.ToRadians(deltaMove.x * -0.5),
 									0,
 								);
 							
-							origin.rotationQuaternion = deltaRotationQuaternion.multiply(origin.rotationQuaternion);
+							qt = deltaRotationQuaternion.multiply(origin.rotationQuaternion);
+							origin.rotationQuaternion = qt;
+							/*
+							BABYLON.Animation.CreateAndStartAnimation("rotation", origin, "rotationQuaternion.x", 100,1, origin.rotationQuaternion.x, qt.x, 0,null,()=>{});
+							BABYLON.Animation.CreateAndStartAnimation("rotation", origin, "rotationQuaternion.y", 100,1, origin.rotationQuaternion.y, qt.y, 0,null,()=>{});
+							BABYLON.Animation.CreateAndStartAnimation("rotation", origin, "rotationQuaternion.z", 100,1, origin.rotationQuaternion.z, qt.z, 0,null,()=>{});*/
 						}
 						
 						previousMousePosition = {
