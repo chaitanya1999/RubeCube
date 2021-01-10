@@ -17,7 +17,7 @@
 			var scene, canvas;
 			var keyDownFlag=false, animationFlag=false;;
 			var origin,originInv;
-			var dimensions=[2,2,2];
+			var dimensions=[2,2,1];
 			var M,N,O;
 			var puzzleData = [];
 			var animFrames = 4, animFPS = 30;
@@ -44,7 +44,8 @@
 			function afterLoad(){
 				//alert(window.innerWidth);
 				//prompt('hello');
-				
+				movesHistory = [];
+				moveIndex=-1;
 				M=dimensions[0];
 				N=dimensions[1];
 				O=dimensions[2];
@@ -350,7 +351,7 @@
 				for(let i=0;i<50;i++){
 					let axis = randomChoice(['x','y','z']);
 					let indexUB = axisIndexUB[axis];
-					puzzleMove(axis, Math.floor(Math.random() * indexUB), randomChoice([true,false]));
+					puzzleMove(axis, Math.floor(Math.random() * indexUB), randomChoice([true,false]),true);
 					await sleep(100);
 				}
 				animFrames = 5;
@@ -360,6 +361,7 @@
 				return arr[Math.floor(Math.random() * arr.length)];
 			}
 			function undoMove(){
+				if(randomizeJobActive)return;
 				if(moveIndex>=0){
 					animFrames=2;
 					let moveToUndo = movesHistory[moveIndex];
@@ -404,6 +406,8 @@
 							mat[N-j-1][M-i-1] = puzzleData[i][j][limit];
 						}
 					}
+					console.log(mat);
+					window.mymat = mat;
 				}
 				
 				
@@ -448,12 +452,13 @@
 				
 				new Promise(function(resolve,reject){
 					let count=0;
-					for(let j=0;j<N;j++){
-						for(let k=0;k<O;k++){
+					for(let j=0;j<mat.length;j++){
+						for(let k=0;k<mat[0].length;k++){
 							count++;
-							if(!mat[j] || !mat[j][k])continue;
+							if(!mat[j] || !mat[j][k]){continue;}
 							let box = mat[j][k];
-							box.parent = pivot;					
+							box.parent = pivot;
+							//alert('set parent ' + j + ' ' + k);
 							if(mat.length!=mat[0].length){
 								if(clockwise)box.myRotation[axis]+=Math.PI;
 								else box.myRotation[axis]-=Math.PI;
@@ -462,9 +467,10 @@
 							else box.myRotation[axis]-=Math.PI/2;
 						}
 					}
-					if(count==N*O)resolve(mat);
+					if(count==mat.length * mat[0].length)resolve(mat);
 				}).then(function(value){
 					//console.log(pivot);
+					//alert('rot');
 					let pivotRot;
 					if(mat.length!=mat[0].length){
 						pivotRot = Math.PI;
