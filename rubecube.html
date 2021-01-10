@@ -352,7 +352,7 @@
 					let axis = randomChoice(['x','y','z']);
 					let indexUB = axisIndexUB[axis];
 					puzzleMove(axis, Math.floor(Math.random() * indexUB), randomChoice([true,false]),true);
-					await sleep(100);
+					await sleep(200);
 				}
 				animFrames = 5;
 				randomizeJobActive = false;
