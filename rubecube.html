@@ -62,7 +62,11 @@
 				canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
 				var engine = new BABYLON.Engine(canvas);
 				scene = new BABYLON.Scene(engine);
-				scene.clearColor = new BABYLON.Color3(0.6,0.6,0.6);
+				//scene.clearColor = new BABYLON.Color3(0.6,0.6,0.6);
+				/*radial-gradient(rgb(255 255 255),rgb(78 124 255 / 60%))*/
+				var background = new BABYLON.Layer("back", '/gradient', scene);
+				
+				background.isBackground = true;
 				origin = new BABYLON.TransformNode("origin");
 				originInv = new BABYLON.TransformNode("originInv");
 				origin.position = new BABYLON.Vector3(0,0,0);
