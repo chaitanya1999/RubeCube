@@ -17,7 +17,7 @@
 			var scene, canvas;
 			var keyDownFlag=false, animationFlag=false;;
 			var origin,originInv;
-			var dimensions=[2,2,1];
+			var dimensions=[2,2,2];
 			var M,N,O;
 			var puzzleData = [];
 			var animFrames = 4, animFPS = 30;
@@ -44,6 +44,12 @@
 			function afterLoad(){
 				//alert(window.innerWidth);
 				//prompt('hello');
+
+				/*LOAD dimensions from localStorage*/
+				if(localStorage.getItem('dimensions')!=null){
+					dimensions = JSON.parse(localStorage.getItem('dimensions'));
+				}
+
 				movesHistory = [];
 				moveIndex=-1;
 				M=dimensions[0];
@@ -346,13 +352,13 @@
 				if(randomizeJobActive) return;
 				randomizeJobActive = true;
 				let moves=50;
-				animFrames = 1;
 				let axisIndexUB={'x': M, 'y': N, 'z': O};
 				for(let i=0;i<50;i++){
+					animFrames = 1;
 					let axis = randomChoice(['x','y','z']);
 					let indexUB = axisIndexUB[axis];
-					puzzleMove(axis, Math.floor(Math.random() * indexUB), randomChoice([true,false]),true);
-					await sleep(200);
+					await puzzleMove(axis, Math.floor(Math.random() * indexUB), randomChoice([true,false]),true);
+					//await sleep(200);
 				}
 				animFrames = 5;
 				randomizeJobActive = false;
@@ -370,105 +376,109 @@
 					//animFrames=4;
 				}
 			}
-			function puzzleMove(rAxis,sliceIndex,clockwise, isUndoMove){
-				const limit = Math.round(sliceIndex);
-				console.log('MOVE : ' + rAxis, limit, clockwise);	
-				let moveData = {rAxis: rAxis, sliceIndex:limit, clockwise: clockwise};
-				if(!isUndoMove){
-					if(moveIndex>0 && movesHistory.length>moveIndex+1)movesHistory[++moveIndex] = moveData;
-					else {
-						movesHistory.push(moveData);
-						moveIndex++;
-					}
-				}
-				let mat=[];
-				//extract data here
-				if(rAxis=='x'){
-					for(let j=0;j<N;j++){mat[j]=[];}
-					for(let j=0;j<N;j++){
-						for(let k=0;k<O;k++){
-							mat[N-j-1][k]=puzzleData[limit][j][k];
+			async function puzzleMove(rAxis,sliceIndex,clockwise, isUndoMove){
+				return new Promise(async function(resolve,reject){
+					const limit = Math.round(sliceIndex);
+					console.log('MOVE : ' + rAxis, limit, clockwise);	
+					let moveData = {rAxis: rAxis, sliceIndex:limit, clockwise: clockwise};
+					if(!isUndoMove){
+						if(moveIndex>0 && movesHistory.length>moveIndex+1)movesHistory[++moveIndex] = moveData;
+						else {
+							movesHistory.push(moveData);
+							moveIndex++;
 						}
 					}
-				} else if(rAxis=='y'){
-					for(let i=0;i<M;i++){
-						for(let k=0;k<O;k++){
-							if(!mat[i])mat[i]=[];
-							if(!puzzleData[i] || !puzzleData[i][limit] || !puzzleData[i][limit][k])continue;
-							mat[i][k] = puzzleData[i][limit][k];
-						}
-					}
-				} else {		//rAxis = 'z'
-					for(let i=0;i<M;i++){
+					let mat=[];
+					//extract data here
+					if(rAxis=='x'){
+						for(let j=0;j<N;j++){mat[j]=[];}
 						for(let j=0;j<N;j++){
-						if(!mat[N-j-1])mat[N-j-1]=[];
-							if(!puzzleData[i] || !puzzleData[i][j] || !puzzleData[i][j][limit])continue;
-							mat[N-j-1][M-i-1] = puzzleData[i][j][limit];
+							for(let k=0;k<O;k++){
+								mat[N-j-1][k]=puzzleData[limit][j][k];
+							}
 						}
-					}
-					console.log(mat);
-					window.mymat = mat;
-				}
-				
-				
-				//rotate
-				mat = rotatePuzzle(mat, clockwise, rAxis, isUndoMove);
-				
-				//put back
-				if(rAxis=='x'){
-					for(let j=0;j<N;j++){
-						for(let k=0;k<O;k++){
-							puzzleData[limit][j][k]=mat[N-j-1][k];
-							//mat[N-j-1][k].updateFacetData();
+					} else if(rAxis=='y'){
+						for(let i=0;i<M;i++){
+							for(let k=0;k<O;k++){
+								if(!mat[i])mat[i]=[];
+								if(!puzzleData[i] || !puzzleData[i][limit] || !puzzleData[i][limit][k])continue;
+								mat[i][k] = puzzleData[i][limit][k];
+							}
 						}
-					}
-				} else if(rAxis=='y'){
-					for(let i=0;i<M;i++){
-						for(let k=0;k<O;k++){
-							if(!puzzleData[i] || !puzzleData[i][limit] || !puzzleData[i][limit][k])continue;
-							puzzleData[i][limit][k] = 
-							mat[i][k];
-							//mat[i][k].updateFacetData();
+					} else {		//rAxis = 'z'
+						for(let i=0;i<M;i++){
+							for(let j=0;j<N;j++){
+							if(!mat[N-j-1])mat[N-j-1]=[];
+								if(!puzzleData[i] || !puzzleData[i][j] || !puzzleData[i][j][limit])continue;
+								mat[N-j-1][M-i-1] = puzzleData[i][j][limit];
+							}
 						}
+						console.log(mat);
+						window.mymat = mat;
 					}
-				} else {		//rAxis = 'z'
-					for(let i=0;i<M;i++){
+					
+					
+					//rotate
+					mat = await rotatePuzzle(mat, clockwise, rAxis, isUndoMove);
+					
+					//put back
+					if(rAxis=='x'){
 						for(let j=0;j<N;j++){
-							if(!puzzleData[i] || !puzzleData[i][j] || !puzzleData[i][j][limit] || !mat[N-j-1])continue;
-							puzzleData[i][j][limit] = 
-							mat[N-j-1][M-i-1]
-							//mat[N-j-1][M-i-1].updateFacetData();
+							for(let k=0;k<O;k++){
+								puzzleData[limit][j][k]=mat[N-j-1][k];
+								//mat[N-j-1][k].updateFacetData();
+							}
+						}
+					} else if(rAxis=='y'){
+						for(let i=0;i<M;i++){
+							for(let k=0;k<O;k++){
+								if(!puzzleData[i] || !puzzleData[i][limit] || !puzzleData[i][limit][k])continue;
+								puzzleData[i][limit][k] = 
+								mat[i][k];
+								//mat[i][k].updateFacetData();
+							}
+						}
+					} else {		//rAxis = 'z'
+						for(let i=0;i<M;i++){
+							for(let j=0;j<N;j++){
+								if(!puzzleData[i] || !puzzleData[i][j] || !puzzleData[i][j][limit] || !mat[N-j-1])continue;
+								puzzleData[i][j][limit] = 
+								mat[N-j-1][M-i-1]
+								//mat[N-j-1][M-i-1].updateFacetData();
+							}
 						}
 					}
-				}
-				for(let a of puzzleData)for(let b of a)for(let cc of b)if(cc)cc.updateFacetData();
+					for(let a of puzzleData)for(let b of a)for(let cc of b)if(cc)cc.updateFacetData();
+					resolve(mat);
+				});
 			}
 			
-			function rotatePuzzle(mat,clockwise,axis,isUndoMove){
-				//rotate
-				let pivot = new BABYLON.TransformNode("root");
-				pivot.position = new BABYLON.Vector3(0,0,0);
-				pivot.parent = origin;
-				
-				new Promise(function(resolve,reject){
-					let count=0;
-					for(let j=0;j<mat.length;j++){
-						for(let k=0;k<mat[0].length;k++){
-							count++;
-							if(!mat[j] || !mat[j][k]){continue;}
-							let box = mat[j][k];
-							box.parent = pivot;
-							//alert('set parent ' + j + ' ' + k);
-							if(mat.length!=mat[0].length){
-								if(clockwise)box.myRotation[axis]+=Math.PI;
-								else box.myRotation[axis]-=Math.PI;
+			async function rotatePuzzle(mat,clockwise,axis,isUndoMove){
+				return new Promise(async function(resolve,reject){
+					//rotate
+					let pivot = new BABYLON.TransformNode("root");
+					pivot.position = new BABYLON.Vector3(0,0,0);
+					pivot.parent = origin;
+					
+					await new Promise(function(resolve,reject){
+						let count=0;
+						for(let j=0;j<mat.length;j++){
+							for(let k=0;k<mat[0].length;k++){
+								count++;
+								if(!mat[j] || !mat[j][k]){continue;}
+								let box = mat[j][k];
+								box.parent = pivot;
+								//alert('set parent ' + j + ' ' + k);
+								if(mat.length!=mat[0].length){
+									if(clockwise)box.myRotation[axis]+=Math.PI;
+									else box.myRotation[axis]-=Math.PI;
+								}
+								else if(clockwise)box.myRotation[axis]+=Math.PI/2;
+								else box.myRotation[axis]-=Math.PI/2;
 							}
-							else if(clockwise)box.myRotation[axis]+=Math.PI/2;
-							else box.myRotation[axis]-=Math.PI/2;
 						}
-					}
-					if(count==mat.length * mat[0].length)resolve(mat);
-				}).then(function(value){
+						if(count==mat.length * mat[0].length)resolve(mat);
+					});
 					//console.log(pivot);
 					//alert('rot');
 					let pivotRot;
@@ -499,10 +509,10 @@
 						}
 						if(count==0)animationFlag=false;
 						if(isUndoMove) animFrames=4;
+						resolve(mat);
 					});
+					mat = rotate2DMatrix(mat,clockwise);
 				});
-				mat = rotate2DMatrix(mat,clockwise);
-				return mat;
 			}
 			
 			function makePuzzle(scene){
@@ -605,6 +615,7 @@
 					scene.dispose();
 					//zoomOutMobile();
 					await sleep(500);
+					localStorage.setItem('dimensions',JSON.stringify(dimensions));
 					afterLoad();
 				}catch(err){alert(err);}
 			}
