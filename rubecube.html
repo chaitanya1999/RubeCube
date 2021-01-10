@@ -25,6 +25,7 @@
 			var randomizeJobActive=false;
 			var movesHistory = [];
 			var moveIndex=-1;
+			var flipSound;
 			
 			
 			let white = new BABYLON.Color4(1,1,1,1);
@@ -49,7 +50,6 @@
 				if(localStorage.getItem('dimensions')!=null){
 					dimensions = JSON.parse(localStorage.getItem('dimensions'));
 				}
-
 				movesHistory = [];
 				moveIndex=-1;
 				M=dimensions[0];
@@ -77,7 +77,7 @@
 				//cameraUpVecNode = BABYLON.MeshBuilder.CreateBox(`zxcvzxcv`, {faceColors:[dark,dark,red,dark,dark,dark]}, scene);;
 				//cameraUpVecNode.position = new BABYLON.Vector3(-10,0,-10);
 				
-				
+				if(!flipSound)flipSound = new BABYLON.Sound("Flip", "./sound.wav", scene, function(){flipSound.play();});
 				scene.clearColor = new BABYLON.Color4(0,0,255,0.3);
 				
 				function renderLoop(){
@@ -353,6 +353,7 @@
 				})
 			};
 			async function randomize(){
+				BABYLON.Engine.audioEngine.setGlobalVolume(5);
 				if(randomizeJobActive) return;
 				randomizeJobActive = true;
 				let moves=50;
@@ -382,6 +383,7 @@
 			}
 			async function puzzleMove(rAxis,sliceIndex,clockwise, isUndoMove){
 				return new Promise(async function(resolve,reject){
+					if(flipSound)flipSound.play();
 					const limit = Math.round(sliceIndex);
 					console.log('MOVE : ' + rAxis, limit, clockwise);	
 					let moveData = {rAxis: rAxis, sliceIndex:limit, clockwise: clockwise};
@@ -559,6 +561,7 @@
 					matrix.push(...result);  // Spread operator
 					return matrix;
 				}
+				
 				if(mat.length!=mat[0].length){
 					let A=mat.length;
 					let B=mat[0].length;

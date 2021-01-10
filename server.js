@@ -8,6 +8,9 @@ app.get('/', (req, res) => {
 app.get('/gradient',(req,res)=>{
   res.sendFile('/gradient.png' , { root : __dirname});
 })
+app.get('/sound.wav',(req,res)=>{
+  res.sendFile('/sound.mp3' , { root : __dirname});
+})
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
