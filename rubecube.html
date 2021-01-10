@@ -606,7 +606,7 @@
 				if(window.innerWidth>window.innerHeight)$('.modal').modal();
 				else {
 					let dimen = prompt("Enter Dimensions: \n(Format- X Y Z | Example - 3 3 3)");
-					setDimensions(dimen);
+					if(dimen)setDimensions(dimen);
 				}
 			}
 		</script>
