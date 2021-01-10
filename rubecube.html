@@ -22,6 +22,9 @@
 			var puzzleData = [];
 			var animFrames = 4, animFPS = 30;
 			var cameraPosNode,cameraUpVecNode,initFlag=false;
+			var randomizeJobActive=false;
+			var movesHistory = [];
+			var moveIndex=-1;
 			
 			
 			let white = new BABYLON.Color4(1,1,1,1);
@@ -339,6 +342,8 @@
 				})
 			};
 			async function randomize(){
+				if(randomizeJobActive) return;
+				randomizeJobActive = true;
 				let moves=50;
 				animFrames = 1;
 				let axisIndexUB={'x': M, 'y': N, 'z': O};
@@ -349,13 +354,31 @@
 					await sleep(100);
 				}
 				animFrames = 5;
+				randomizeJobActive = false;
 			}
 			function randomChoice(arr){
 				return arr[Math.floor(Math.random() * arr.length)];
 			}
-			function puzzleMove(rAxis,sliceIndex,clockwise){
+			function undoMove(){
+				if(moveIndex>=0){
+					animFrames=2;
+					let moveToUndo = movesHistory[moveIndex];
+					puzzleMove(moveToUndo.rAxis, moveToUndo.sliceIndex, ! moveToUndo.clockwise, true);
+					moveIndex--;
+					//animFrames=4;
+				}
+			}
+			function puzzleMove(rAxis,sliceIndex,clockwise, isUndoMove){
 				const limit = Math.round(sliceIndex);
 				console.log('MOVE : ' + rAxis, limit, clockwise);	
+				let moveData = {rAxis: rAxis, sliceIndex:limit, clockwise: clockwise};
+				if(!isUndoMove){
+					if(moveIndex>0 && movesHistory.length>moveIndex+1)movesHistory[++moveIndex] = moveData;
+					else {
+						movesHistory.push(moveData);
+						moveIndex++;
+					}
+				}
 				let mat=[];
 				//extract data here
 				if(rAxis=='x'){
@@ -385,7 +408,7 @@
 				
 				
 				//rotate
-				mat = rotatePuzzle(mat, clockwise, rAxis);
+				mat = rotatePuzzle(mat, clockwise, rAxis, isUndoMove);
 				
 				//put back
 				if(rAxis=='x'){
@@ -417,7 +440,7 @@
 				for(let a of puzzleData)for(let b of a)for(let cc of b)if(cc)cc.updateFacetData();
 			}
 			
-			function rotatePuzzle(mat,clockwise,axis){
+			function rotatePuzzle(mat,clockwise,axis,isUndoMove){
 				//rotate
 				let pivot = new BABYLON.TransformNode("root");
 				pivot.position = new BABYLON.Vector3(0,0,0);
@@ -469,6 +492,7 @@
 							count--;
 						}
 						if(count==0)animationFlag=false;
+						if(isUndoMove) animFrames=4;
 					});
 				});
 				mat = rotate2DMatrix(mat,clockwise);
@@ -611,6 +635,9 @@
 			<button value='Randomize' class="btn btn-primary flex-grow-1" onclick='randomize()'>Randomize</button>
 			<button type="button" class="btn btn-primary flex-grow-1" onclick='showModal()'>
 				Change Dimensions
+			</button>
+			<button type="button" class="btn btn-primary flex-grow-1" onclick='undoMove()'>
+				UNDO
 			</button>
 		</div>
 		<canvas id="main" style='width:100%;height:95%;' ></canvas>
