@@ -31,9 +31,9 @@
 			let white = new BABYLON.Color4(1,1,1,1);
 			let yellow = new BABYLON.Color4(1,1,0,1);
 			let red = new BABYLON.Color4(1,0,0,1);
-			let orange = new BABYLON.Color4(1,0.64,0,1);
-			let green = new BABYLON.Color4(0,1,0,1);
-			let blue = new BABYLON.Color4(0,0,1,1);			
+			let orange = new BABYLON.Color4(1,0.58,0.2,1);
+			let green = new BABYLON.Color4(0,1,0.3,1);
+			let blue = new BABYLON.Color4(0.2,0.2,1,1);			
 			let dark = new BABYLON.Color4(0.05,0.05,0.05,1);		
 			
 			var isDragging = false;
@@ -529,7 +529,18 @@
 						for(let k=0;k<O;k++){
 							if(i>0 && i<M-1 && j>0 && j<N-1 && k>0 && k<O-1)continue;
 							let a=i-(M-1)/2, b = j-(N-1)/2, c = k-(O-1)/2;
-							let box = BABYLON.MeshBuilder.CreateBox(`box ${a} ${b} ${c}`, {faceColors:[white,yellow,red,orange,green,blue]}, scene);
+							let faceCol = [white,yellow,red,orange,green,blue];
+							//if(i==0&&j==0&&k==0) faceCol=[dark,dark,dark,dark,dark,dark];
+							//else if(i==1&&j==0&&k==0) faceCol=[dark,dark,dark,dark,dark,dark];
+							if(j>0)faceCol[5]=dark;
+							if(j<N-1)faceCol[4]=dark;
+
+							if(k>0)faceCol[1]=dark;
+							if(k<O-1)faceCol[0]=dark;
+
+							if(i>0)faceCol[3]=dark;
+							if(i<M-1)faceCol[2]=dark;
+							let box = BABYLON.MeshBuilder.CreateBox(`box ${a} ${b} ${c}`, {faceColors:faceCol}, scene);
 							box.enableEdgesRendering(); 
 							box.edgesWidth = 10.0;
 							box.edgesColor = new BABYLON.Color4(0,0,0,1);
