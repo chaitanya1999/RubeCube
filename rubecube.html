@@ -17,7 +17,7 @@
 			var scene, canvas;
 			var keyDownFlag=false, animationFlag=false;;
 			var origin,originInv;
-			var dimensions=[2,2,2];
+			var dimensions=[3,3,3];
 			var M,N,O;
 			var puzzleData = [];
 			var saveStateData;
@@ -43,18 +43,20 @@
 				y: 0
 			};
 				
-			function afterLoad(){
+			function afterLoad(reloadFlag){
 				//alert(window.innerWidth);
 				//prompt('hello');
-
-				/*LOAD dimensions from localStorage*/
-				if(localStorage.getItem('dimensions')!=null){
-					dimensions = JSON.parse(localStorage.getItem('dimensions'));
-				}
-
+				
 				/*LOAD saveStateData*/
-				saveStateData = localStorage.getItem('SaveState');
-				if(saveStateData) saveStateData = JSON.parse(saveStateData);
+				if(!reloadFlag){
+					saveStateData = localStorage.getItem('SaveState');
+					if(saveStateData) {
+						saveStateData = JSON.parse(saveStateData);
+						dimensions = saveStateData.dimensions;
+					}
+				} else {
+					saveStateData = null;
+				}
 
 				movesHistory = [];
 				moveIndex=-1;
@@ -690,9 +692,9 @@
 					scene.dispose();
 					//zoomOutMobile();
 					await sleep(500);
-					localStorage.setItem('dimensions',JSON.stringify(dimensions));
-					localStorage.removeItem('SaveState');
-					afterLoad();
+					//localStorage.setItem('dimensions',JSON.stringify(dimensions));
+					//localStorage.removeItem('SaveState');
+					afterLoad(true);
 				}catch(err){alert(err);}
 			}
 			function showModal(){
@@ -709,6 +711,7 @@
 			function savePuzzleState(){
 				let saveState = {};
 				saveState.origin = {rotation: origin.rotationQuaternion};
+				saveState.dimensions = dimensions;
 				for(let i=0;i<M;i++){
 					for(let j=0;j<N;j++){
 						for(let k=0;k<O;k++){
