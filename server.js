@@ -11,6 +11,9 @@ app.get('/gradient',(req,res)=>{
 app.get('/sound.wav',(req,res)=>{
   res.sendFile('/sound.mp3' , { root : __dirname});
 })
+app.get('/file/:file',(req,res)=>{
+  res.sendFile('/'+req.params.file , { root : __dirname});
+})
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`)
