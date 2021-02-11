@@ -114,7 +114,7 @@
 				camera.lowerBetaLimit = null;
 				camera.upperBetaLimit = null;
 				camera.lowerRadiusLimit = 10 // how far in can you zoom
-				camera.upperRadiusLimit = 25
+				camera.upperRadiusLimit = 50
 				camera.panningSensibility = 0
 				camera.noRotationConstraint=true;
 				camera.updateUpVectorFromRotation=true;
@@ -138,14 +138,15 @@
 				let oldPickInfo;
 				let multiFlag=false;
 				scene.onPointerDown = function(evt,pickInfo){
+					//console.log('#$#$',evt.button);
 					if(mouseDownFlag[evt.button]>0)multiFlag=true;
 					mouseDownFlag[evt.button]++;
 					x=evt.x;
 					y=evt.y;
 					oldPickInfo = pickInfo;
-					if(evt.button==0)console.log(pickInfo.faceId);
-					else if(evt.button==2){
-					}
+					//if(evt.button==0)console.log(pickInfo.faceId);
+					//else if(evt.button==2){
+					//}
 					if(!pickInfo.pickedMesh){
 						isDragging = true;
 						previousMousePosition = {
@@ -571,7 +572,6 @@
 								if(i>0)faceCol[3]=dark;
 								if(i<M-1)faceCol[2]=dark;
 							} else {
-								console.log(saveStateData[boxId].name);
 								let a = parseFloat(saveStateData[boxId].name.split(' ')[1]);
 								let b = parseFloat(saveStateData[boxId].name.split(' ')[2]);
 								let c = parseFloat(saveStateData[boxId].name.split(' ')[3]);
