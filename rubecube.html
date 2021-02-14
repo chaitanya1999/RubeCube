@@ -81,7 +81,7 @@
 				canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
 				var engine = new BABYLON.Engine(canvas);
 				scene = new BABYLON.Scene(engine);
-				//scene.clearColor = new BABYLON.Color3(0.6,0.6,0.6);
+							
 				/*radial-gradient(rgb(255 255 255),rgb(78 124 255 / 60%))*/
 				var background = new BABYLON.Layer("back", '/gradient', scene);
 				
@@ -119,8 +119,9 @@
 				//camera.attachControl(canvas, false);
 				
 
-				//var light = new BABYLON.PointLight("light", new BABYLON.Vector3(10,10,0),scene);
-				//var light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(0, -1, 0), scene);
+				//var light = new BABYLON.PointLight("light", camera.position.clone(),scene);
+				//var light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(10,10,10), scene);
+				//var light = new BABYLON.SpotLight("Spot0", new BABYLON.Vector3(0, 30, -10), new BABYLON.Vector3(0, -1, 0), 0.8, 2, scene);
 				var light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(1,1,1), scene);
 				var light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(-1,-1,-1), scene);
 				//var light3 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 0, 1), scene);
@@ -128,12 +129,7 @@
 				if(!saveStateData){
 					//origin.rotate(BABYLON.Axis.X, Math.PI/4, BABYLON.Space.WORLD);
 					//origin.rotate(BABYLON.Axis.Y, 7*Math.PI/4, BABYLON.Space.WORLD);
-
 					origin.rotationQuaternion = new BABYLON.Quaternion(0.20960053223431863,-0.43932790197078325,-0.16960641120037118,0.8569085579668158)
-					/*origin.rotate(BABYLON.Axis.X, 0.21131232280404713, BABYLON.Space.WORLD);
-					origin.rotate(BABYLON.Axis.Y, -0.4294646544746713, BABYLON.Space.WORLD);
-					origin.rotate(BABYLON.Axis.Z, -0.21903977865808996, BABYLON.Space.WORLD);*/
-
 				}
 				
 				makePuzzle(scene);
@@ -147,6 +143,20 @@
 					y=evt.y;
 					oldPickInfo = pickInfo;
 					if(!pickInfo.pickedMesh){	/*If there is no picked mesh i.e. no puzzleMove*/
+						if(mouseDownFlag[2]){
+							previousMousePosition = {
+								x: evt.offsetX,
+								y: evt.offsetY,
+								pointerId: evt.pointerId
+							}; 
+							isDragging = true;
+							multiTouch=true;
+							previousMousePosition2 = {
+								x: $('#main')[0].width/2,
+								y: $('#main')[0].height/2,
+								pointerId: -1
+							};
+						}
 						if(previousMousePosition.pointerId && !previousMousePosition2.pointerId){
 							previousMousePosition2 = {
 								x: evt.offsetX,
@@ -170,7 +180,20 @@
 				}
 				scene.onPointerUp = function(evt,pickInfo){
 					mouseDownFlag[evt.button]--;
-					if(evt.pointerId==previousMousePosition.pointerId){
+					if(evt.button==2){
+						previousMousePosition2 = {
+							x: 0,
+							y: 0,
+							pointerId: undefined
+						}; 
+						previousMousePosition = {
+							x: 0,
+							y: 0,
+							pointerId: undefined
+						}; 
+						isDraggong=false;
+						multiTouch=false;
+					} else if(evt.pointerId==previousMousePosition.pointerId){
 						previousMousePosition = previousMousePosition2;
 						previousMousePosition2 = {
 							x: 0,
@@ -190,14 +213,9 @@
 					} else {	//extra touches, or a puzzleMove
 						oldPickInfo=null;
 					}
-
-					if(evt.button==2){
-						
-					}
 				}
 				scene.onPointerMove = function(evt,pickInfo){
-					if(mouseDownFlag[2]){
-					} else if(mouseDownFlag[0] && oldPickInfo && oldPickInfo.pickedMesh && pickInfo.pickedMesh){
+					if(mouseDownFlag[0] && oldPickInfo && oldPickInfo.pickedMesh && pickInfo.pickedMesh){
 						let oldMesh = oldPickInfo.pickedMesh, newMesh = pickInfo.pickedMesh;
 						if(oldMesh.id==newMesh.id){
 							if( (oldPickInfo.faceId-pickInfo.faceId==1 || oldPickInfo.faceId-pickInfo.faceId==-1)
@@ -322,7 +340,7 @@
 								puzzleMove(axis,index,clockwise);
 							}
 						}
-					} else if(mouseDownFlag[0]){
+					} else if(mouseDownFlag[0] || mouseDownFlag[2]){
 						var deltaMove = {
 							x: evt.offsetX-previousMousePosition.x,
 							y: evt.offsetY-previousMousePosition.y
@@ -355,7 +373,6 @@
 								}
 								//console.log(slope,BABYLON.Tools.ToDegrees(Math.atan(slope)),BABYLON.Tools.ToDegrees(Math.atan(lastSlope)));
 								let angle = 2*Math.atan((slope-lastSlope)/(1+slope*lastSlope));
-								console.log('# ' + angle);
 								if(!isNaN(angle)){
 									deltaRotationQuaternion = BABYLON.Quaternion
 									.FromEulerAngles(
@@ -365,7 +382,9 @@
 
 									let qt = deltaRotationQuaternion.multiply(origin.rotationQuaternion);
 									origin.rotationQuaternion = qt;
-									camera.radius *= lastRad/rad;
+									if(!mouseDownFlag[2]){
+										camera.radius *= lastRad/rad;
+									}
 								}
 							}
 							else if(!multiTouch && evt.pointerId == previousMousePosition.pointerId){
@@ -388,6 +407,18 @@
 						}
 					}
 				}
+				scene.onPointerObservable.add((evt) => {
+					switch (evt.type) {
+						case BABYLON.PointerEventTypes.POINTERWHEEL://Wheel zoom
+							if(evt.event.wheelDeltaY>0){
+								camera.radius*=0.8;
+							} else {
+								camera.radius*=1.2;
+							}
+							break;
+					}
+				});
+
 				//showWorldAxis(30);
 				document.onkeydown = async function(evt){
 					if(keyDownFlag || animationFlag) return;
