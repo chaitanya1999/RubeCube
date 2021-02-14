@@ -338,7 +338,7 @@
 								let slope,rad;
 								if(evt.pointerId==previousMousePosition.pointerId){
 									slope = (evt.offsetY - previousMousePosition2.y)/(evt.offsetX - previousMousePosition2.x);
-									/*if(Math.abs(slope)!=Infinity) */previousMousePosition = {
+									previousMousePosition = {
 										x: evt.offsetX,
 										y: evt.offsetY,
 										pointerId: evt.pointerId
@@ -346,24 +346,25 @@
 									rad = distanceBetween(evt.offsetX,evt.offsetY,previousMousePosition2.x,previousMousePosition2.y);
 								} else {
 									slope = (previousMousePosition.y - evt.offsetY)/(previousMousePosition.x - evt.offsetX);
-									/*if(Math.abs(slope)!=Infinity) */previousMousePosition2 = {
+									previousMousePosition2 = {
 										x: evt.offsetX,
 										y: evt.offsetY,
 										pointerId: evt.pointerId
 									};
 									rad = distanceBetween(previousMousePosition.x,previousMousePosition.y,evt.offsetX,evt.offsetY);
 								}
-								console.log(slope,BABYLON.Tools.ToDegrees(Math.atan(slope)),BABYLON.Tools.ToDegrees(Math.atan(lastSlope)));
-								/*if(Math.abs(slope)!=Infinity) */{
+								//console.log(slope,BABYLON.Tools.ToDegrees(Math.atan(slope)),BABYLON.Tools.ToDegrees(Math.atan(lastSlope)));
+								let angle = 2*Math.atan((slope-lastSlope)/(1+slope*lastSlope));
+								console.log('# ' + angle);
+								if(!isNaN(angle)){
 									deltaRotationQuaternion = BABYLON.Quaternion
 									.FromEulerAngles(
 										0,0,
-										2*Math.atan((slope-lastSlope)/(1+slope*lastSlope))
+										angle
 									);
 
 									let qt = deltaRotationQuaternion.multiply(origin.rotationQuaternion);
 									origin.rotationQuaternion = qt;
-									//console.log("^&^&",(Math.atan(slope)-Math.atan(lastSlope))*180/Math.PI);
 									camera.radius *= lastRad/rad;
 								}
 							}
