@@ -31,10 +31,10 @@
 			
 			let white = new BABYLON.Color4(1,1,1,1);
 			let yellow = new BABYLON.Color4(1,1,0,1);
-			let red = new BABYLON.Color4(1,0,0,1);
-			let orange = new BABYLON.Color4(1,0.58,0.2,1);
+			let red = new BABYLON.Color4(1,0.28,0,1);
+			let orange = new BABYLON.Color4(1,0.76,0,1);
 			let green = new BABYLON.Color4(0,1,0.3,1);
-			let blue = new BABYLON.Color4(0.2,0.2,1,1);			
+			let blue = new BABYLON.Color4(0.15,0.3,1,1);			
 			let dark = new BABYLON.Color4(0.05,0.05,0.05,1);		
 			
 			var isDragging = false;
@@ -484,6 +484,10 @@
 					await puzzleMove(axis, Math.floor(Math.random() * indexUB), randomChoice([true,false]),true);
 					//await sleep(200);
 				}
+				//clear undo moves
+				movesHistory = [];
+				moveIndex=-1;
+				
 				animFrames = 5;
 				randomizeJobActive = false;
 			}
@@ -849,7 +853,7 @@
 		<title>RubeCube</title>
 		
 	</head>
-	<body onload='afterLoad()'>
+	<body onload='afterLoad()' style='user-select: none;'>
 		<!-- width:100%;position:absolute;top:0px;left:0px;margin-top:10px; -->
 		<div id='hud' style='height:5%;' class='center'>
 			<button value='Randomize' class="btn btn-primary flex-grow-1" onclick='randomize()'>Randomize</button>
