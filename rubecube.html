@@ -589,7 +589,7 @@
 					
 					resolve(mat);
 
-					if(flatPuzzle.isWinningState()) setTimeout(gameWon, 10); 
+					if(!isUndoMove && flatPuzzle.isWinningState()) setTimeout(gameWon, 10); 
 				});
 			}
 			
