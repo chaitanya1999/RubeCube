@@ -9,10 +9,11 @@
 		
 		
 		<meta name="viewport" content="user-scalable=no" />
-		
+		<script src='./file/flatPuzzle.js'></script>
 
 		
 		<script>
+			
 			var camera;
 			var scene, canvas;
 			var keyDownFlag=false, animationFlag=false;;
@@ -20,6 +21,7 @@
 			var dimensions=[3,3,3];
 			var M,N,O;
 			var puzzleData = [];
+			var flatPuzzle;
 			var saveStateData;
 			var animFrames = 4, animFPS = 30;
 			var cameraPosNode,cameraUpVecNode,initFlag=false;
@@ -121,12 +123,8 @@
 				//camera.attachControl(canvas, false);
 				
 
-				//var light = new BABYLON.PointLight("light", camera.position.clone(),scene);
-				//var light = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(10,10,10), scene);
-				//var light = new BABYLON.SpotLight("Spot0", new BABYLON.Vector3(0, 30, -10), new BABYLON.Vector3(0, -1, 0), 0.8, 2, scene);
 				var light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(1,1,1), scene);
 				var light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(-1,-1,-1), scene);
-				//var light3 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 0, 1), scene);
 				
 				if(!saveStateData){
 					//origin.rotate(BABYLON.Axis.X, Math.PI/4, BABYLON.Space.WORLD);
@@ -136,6 +134,8 @@
 				}
 				
 				makePuzzle(scene);
+				flatPuzzle = new FlatPuzzle(M,N,O);
+				if(saveStateData) Object.assign(flatPuzzle,saveStateData.flatPuzzle);
 				let mouseDownFlag=[0,0,0];
 				let x,y;
 				var oldPickInfo;
@@ -245,10 +245,10 @@
 							newNormal.y = Math.sign(newNormal.y)*Math.round(Math.abs(newNormal.y));
 							newNormal.z = Math.sign(newNormal.z)*Math.round(Math.abs(newNormal.z));
 							
-							console.log('$#$# ' + oldNormal + " | " + newNormal);
+							//console.log('$#$# ' + oldNormal + " | " + newNormal);
 							
 							let rotVector = oldNormal.cross(newNormal);
-							console.log("#$#$ " + rotVector);
+							//console.log("#$#$ " + rotVector);
 							let clockwise=true;
 							let axis='x',index=0;
 							//find clockwise
@@ -266,7 +266,7 @@
 							index = Math.round(index);
 							//console.log('$' + rotVector, oldNormal, newNormal, '|' + axis + " " + index);
 							oldPickInfo=null;
-							puzzleMove(axis,index,clockwise);
+							puzzleMove(axis,index,clockwise,false);
 						} else {
 							let clockwise=true, axis, index;
 							oldMesh.position.x = zerofy(oldMesh.position.x);
@@ -296,7 +296,7 @@
 							vector.y = Math.sign(vector.y)*Math.round(Math.abs(vector.y));
 							vector.z = Math.sign(vector.z)*Math.round(Math.abs(vector.z));
 							
-							console.log(oldMesh.position , " || " , newMesh.position);
+							//console.log(oldMesh.position , " || " , newMesh.position);
 							
 							if(floatEquals(oldMesh.position.y,newMesh.position.y) && floatEquals(oldMesh.position.z,newMesh.position.z)){
 								
@@ -311,7 +311,7 @@
 								if(axis=='y')index=oldMesh.position.y + (N-1)/2;
 								else if(axis=='z')index=oldMesh.position.z + (O-1)/2;
 								oldPickInfo=null;
-								puzzleMove(axis,index,clockwise);
+								puzzleMove(axis,index,clockwise,false);
 								
 							} else if(floatEquals(oldMesh.position.x,newMesh.position.x) && floatEquals(oldMesh.position.z,newMesh.position.z)){
 								
@@ -326,7 +326,7 @@
 								if(axis=='x')index=oldMesh.position.x + (M-1)/2;
 								else if(axis=='z')index=oldMesh.position.z + (O-1)/2;
 								oldPickInfo=null;
-								puzzleMove(axis,index,clockwise);
+								puzzleMove(axis,index,clockwise,false);
 							} else if(floatEquals(oldMesh.position.x,newMesh.position.x) && floatEquals(oldMesh.position.y,newMesh.position.y)){
 								
 								if(vector.x==1 || vector.x==-1)axis='y';
@@ -340,7 +340,7 @@
 								if(axis=='x')index=oldMesh.position.x + (M-1)/2;
 								else if(axis=='y')index=oldMesh.position.y + (N-1)/2;
 								oldPickInfo=null;
-								puzzleMove(axis,index,clockwise);
+								puzzleMove(axis,index,clockwise,false);
 							}
 						}
 					} else if(mouseDownFlag[0] || mouseDownFlag[2]){
@@ -429,11 +429,11 @@
 					
 					let mat=[];
 					if(evt.key=='f' || evt.key=='F' || evt.key=='b' || evt.key=='B'){			
-						puzzleMove('x',['f','F'].includes(evt.key) ? M-1 : 0,evt.key=='f' || evt.key=='B');
+						puzzleMove('x',['f','F'].includes(evt.key) ? M-1 : 0,evt.key=='f' || evt.key=='B',false);
 					} else if(evt.key=='r' || evt.key=='R' || evt.key=='l' || evt.key=='L'){
-						puzzleMove('z',['r','R'].includes(evt.key) ? O-1 : 0,evt.key=='r' || evt.key=='L');
+						puzzleMove('z',['r','R'].includes(evt.key) ? O-1 : 0,evt.key=='r' || evt.key=='L',false);
 					} else if(evt.key=='u' || evt.key=='U' || evt.key=='d' || evt.key=='D'){
-						puzzleMove('y',['u','U'].includes(evt.key) ? N-1 : 0,evt.key=='u' || evt.key=='D');
+						puzzleMove('y',['u','U'].includes(evt.key) ? N-1 : 0,evt.key=='u' || evt.key=='D'.false);
 					} else if(evt.key=='z'){
 						multiFlag = true;
 					} else if(evt.key=='T'){
@@ -519,15 +519,10 @@
 				return new Promise(async function(resolve,reject){
 					cubeFlipSound();
 					const limit = Math.round(sliceIndex);
-					console.log('MOVE : ' + rAxis, limit, clockwise);	
+					console.log('MOVE : ' + rAxis, limit, 'Clockwise: ' + clockwise, 'UndoMove = ' + !!isUndoMove);	
 					let moveData = {rAxis: rAxis, sliceIndex:limit, clockwise: clockwise};
 					if(!isUndoMove){
 						movesHistory[++moveIndex] = moveData;
-						//if(moveIndex>0 && movesHistory.length>moveIndex+1)
-						//else {
-							//movesHistory.push(moveData);
-							//moveIndex++;
-						//}
 					}
 					let mat=[];
 					//extract data here
@@ -554,8 +549,6 @@
 								mat[N-j-1][M-i-1] = puzzleData[i][j][limit];
 							}
 						}
-						console.log(mat);
-						window.mymat = mat;
 					}
 					
 					
@@ -590,7 +583,13 @@
 						}
 					}
 					for(let a of puzzleData)for(let b of a)for(let cc of b)if(cc)cc.updateFacetData();
+
+					/*flatPuzzleData ROTATION*/
+					await flatPuzzle.puzzleMove(rAxis,limit,clockwise,isUndoMove);
+					
 					resolve(mat);
+
+					if(flatPuzzle.isWinningState()) setTimeout(gameWon, 10); 
 				});
 			}
 			
@@ -656,6 +655,14 @@
 				});
 			}
 			
+			// function makeFlatPuzzle(){
+			// 	flatPuzzleData['front'] = Array.from(Array(N), () => Array(O).fill('R'));
+			// 	flatPuzzleData['back'] = Array.from(Array(N), () => Array(O).fill('O'));
+			// 	flatPuzzleData['top'] = Array.from(Array(M), () => Array(O).fill('G'));
+			// 	flatPuzzleData['bottom'] = Array.from(Array(M), () => Array(O).fill('B'));
+			// 	flatPuzzleData['left'] = Array.from(Array(N), () => Array(M).fill('Y'));
+			// 	flatPuzzleData['right'] = Array.from(Array(N), () => Array(M).fill('W'));
+			// }
 			function makePuzzle(scene){
 				for(let i=0;i<M;i++){
 					puzzleData[i]=[];
@@ -678,9 +685,9 @@
 								if(i>0)faceCol[3]=dark;
 								if(i<M-1)faceCol[2]=dark;
 							} else {
-								let a = parseFloat(saveStateData[boxId].name.split(' ')[1]);
-								let b = parseFloat(saveStateData[boxId].name.split(' ')[2]);
-								let c = parseFloat(saveStateData[boxId].name.split(' ')[3]);
+								a = parseFloat(saveStateData[boxId].name.split(' ')[1]);
+								b = parseFloat(saveStateData[boxId].name.split(' ')[2]);
+								c = parseFloat(saveStateData[boxId].name.split(' ')[3]);
 								a+=(M-1)/2;
 								b+=(N-1)/2;
 								c+=(O-1)/2;
@@ -820,12 +827,13 @@
 				let saveState = {};
 				saveState.origin = {rotation: origin.rotationQuaternion};
 				saveState.dimensions = dimensions;
+				saveState.flatPuzzle = flatPuzzle;
 				for(let i=0;i<M;i++){
 					for(let j=0;j<N;j++){
 						for(let k=0;k<O;k++){
 							let box = puzzleData[i][j][k];
 							if(!box)continue;
-							console.log(`${i} ${j} ${k}`);
+							//console.log(`${i} ${j} ${k}`);
 							saveState[`${i} ${j} ${k}`] = {rotation: box.rotationQuaternion, position: box.getAbsolutePosition().clone(), name: box.name};
 						}
 					}
@@ -835,9 +843,12 @@
 			}
 
 			function showInfo(){
-				let msg = `This is a Rubik Cube game that supports custom dimensions, even cuboids.\n
-							Single touch/Left click and Two-finger-touch/Right Click to rotate the cube in space.`;
+				let msg = `This is a Rubik Cube game that supports custom dimensions, even cuboids.\nSingle touch/Left click and Two-finger-touch/Right Click to rotate the cube in space.`;
 				alert(msg);
+			}
+
+			function gameWon(){
+				alert("Congratulations, you solved the cube");
 			}
 		</script>
 		<style>

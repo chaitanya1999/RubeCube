@@ -1,0 +1,19 @@
+<html>
+    <script src='./flatPuzzle.js'></script>
+    <script>        
+        var flatPuzzle = new FlatPuzzle(3,3,3);
+
+        function display(){
+            document.clear();
+            document.body.innerHTML = '';
+            for(let key in flatPuzzle){
+                if(['M','N','O'].includes(key))continue;
+                document.writeln('# ' + key + '<br/>');
+                for(let row of flatPuzzle[key]){
+                    document.writeln(row + '<br/>');
+                }
+                document.writeln('<br/><br/><br/>');
+            }
+        }
+    </script>
+</html>
