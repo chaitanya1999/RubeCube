@@ -61,7 +61,8 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
             if(rAxis=='x'){
                 if(sliceIndex==M-1){ //rotate front
                     this['front'] = this.rotate2DMatrix(this['front'], clockwise);
-                } else if(sliceIndex==0){ //rotate back
+                }
+                if(sliceIndex==0){ //rotate back
                     this['back'] = this.rotate2DMatrix(this['back'], !clockwise);
                 }
                 //rotate other related faces 
@@ -76,7 +77,8 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
             } else if(rAxis=='y'){
                 if(sliceIndex==N-1){ //rotate top
                     this['top'] = this.rotate2DMatrix(this['top'], clockwise);
-                } else if(sliceIndex==0){ //rotate botom
+                }
+                if(sliceIndex==0){ //rotate botom
                     this['bottom'] = this.rotate2DMatrix(this['bottom'], !clockwise);
                 }
                 //rotate other related faces 
@@ -91,7 +93,8 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
             } else if(rAxis=='z'){
                 if(sliceIndex==O-1){ //rotate right
                     this['right'] = this.rotate2DMatrix(this['right'], clockwise);
-                } else if(sliceIndex==0){ //rotate botom
+                }
+                if(sliceIndex==0){ //rotate botom
                     this['left'] = this.rotate2DMatrix(this['left'], !clockwise);
                 }
                 //rotate other related faces 
@@ -114,15 +117,15 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
             //PUT BACK FlatPuzzle rotated tempMat in this
             if(rAxis=='x'){
                 //put back
-                this['top'][sliceIndex] = tempMat[0].slice(1,N+1).slice(0);
-                this['bottom'][M-1-sliceIndex] = tempMat[N-1 + 2].slice(1,N+1).slice(0);
+                this['top'][sliceIndex] = tempMat[0].slice(1,tempMat[0].length - 1).slice(0);
+                this['bottom'][M-1-sliceIndex] = tempMat[N-1 + 2].slice(1,tempMat[0].length - 1).slice(0);
                 for(let i=1;i<=N;i++){
                     this['left'][i-1][sliceIndex] = tempMat[i][0];
                     this['right'][i-1][M-1-sliceIndex] = tempMat[i][O+1];
                 }
             } else if(rAxis=='y'){
-                this['back'][N-1-sliceIndex] = tempMat[0].slice(1,M+1).reverse().slice(0);
-                this['front'][N-1-sliceIndex] = tempMat[M-1 + 2].slice(1,M+1).slice(0);
+                this['back'][N-1-sliceIndex] = tempMat[0].slice(1,tempMat[0].length - 1).reverse().slice(0);
+                this['front'][N-1-sliceIndex] = tempMat[M-1 + 2].slice(1,tempMat[0].length - 1).slice(0);
                 for(let i=1;i<=M;i++){
                     this['left'][N-1-sliceIndex][i-1] = tempMat[i][0];
                     this['right'][N-1-sliceIndex][M-1-(i-1)] = tempMat[i][O+1];
