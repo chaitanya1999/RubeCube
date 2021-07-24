@@ -17,7 +17,8 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
         this.makeFlatPuzzle();
     }
     makeFlatPuzzle(){
-        // let M = this.M, N = this.N, O = this.O;
+        let M = this.M, N = this.N, O = this.O;
+        
         this.front = Array.from(Array(this.N), () => Array(this.O).fill('R'));
         this.back = Array.from(Array(this.N), () => Array(this.O).fill('O'));
         this.top = Array.from(Array(this.M), () => Array(this.O).fill('G'));
@@ -31,13 +32,54 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
         this.bottomWinning = Array.from(Array(this.M), () => Array(this.O).fill('B'));
         this.leftWinning = Array.from(Array(this.N), () => Array(this.M).fill('Y'));
         this.rightWinning = Array.from(Array(this.N), () => Array(this.M).fill('W'));
+        
+        /*
+        this.front = [
+            ['O','O','O'],
+            ['W','W','W'],
+            ['R','R','R'],
+        ];
+        this.back = [
+            ['O','O','O'],
+            ['W','W','W'],
+            ['R','R','R'],
+        ];
+        this.top = Array.from(Array(this.M), () => Array(this.O).fill('G'));
+        this.bottom = Array.from(Array(this.M), () => Array(this.O).fill('B'));
+        this.left = [
+            ['O','O','O'],
+            ['W','W','W'],
+            ['R','R','R'],
+        ];
+        this.right = [
+            ['O','O','O'],
+            ['W','W','W'],
+            ['R','R','R'],
+        ];
 
-        // this.frontWinning={'R':N*O,'O':0,'G':0,'B':0,'Y':0,'W':0};
-        // this.backWinning={'R':0,'O':N*O,'G':0,'B':0,'Y':0,'W':0};
-        // this.topWinning={'R':0,'O':0,'G':M*O,'B':0,'Y':0,'W':0};
-        // this.bottomWinning={'R':0,'O':0,'G':0,'B':M*O,'Y':0,'W':0};
-        // this.leftWinning={'R':0,'O':0,'G':0,'B':0,'Y':N*M,'W':0};
-        // this.rightWinning={'R':0,'O':0,'G':0,'B':0,'Y':0,'W':N*M};
+        this.frontWinning = [
+            ['O','O','O'],
+            ['W','W','W'],
+            ['R','R','R'],
+        ];
+        this.backWinning = [
+            ['O','O','O'],
+            ['W','W','W'],
+            ['R','R','R'],
+        ];
+        this.topWinning = Array.from(Array(this.M), () => Array(this.O).fill('G'));
+        this.bottomWinning = Array.from(Array(this.M), () => Array(this.O).fill('B'));
+        this.leftWinning = [
+            ['O','O','O'],
+            ['W','W','W'],
+            ['R','R','R'],
+        ];
+        this.rightWinning = [
+            ['O','O','O'],
+            ['W','W','W'],
+            ['R','R','R'],
+        ];
+        */
     }
 
     isWinningState(){
@@ -52,6 +94,11 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
             if(!flag) return false;
         }
         return true;
+
+        // return (
+        //     (this.compare2DMatrices(this.front,this.topWinning) && this.compare2DMatrices(this.bottom,this.frontWinning) && this.compare2DMatrices(this.back,this.bottomWinning) && this.compare2DMatrices(this.rotate2DMatrix(this.top,false,true),this.backWinning) && this.compare2DMatrices(this.rotate2DMatrix(this.left,false),this.leftWinning) && this.compare2DMatrices(this.rotate2DMatrix(this.right,true),this.rightWinning))
+        // );
+
     }
 
     puzzleMove(rAxis,sliceIndex,clockwise,isUndoMove){
@@ -145,7 +192,7 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
         }.bind(this));
     }
 
-    rotate2DMatrix(mat,clockwise){
+    rotate2DMatrix(mat,clockwise,doubleTurn){
         function rotate(matrix) {          // function statement
             const N = matrix.length - 1;   // use a constant
             // use arrow functions and nested Winning;
@@ -157,7 +204,7 @@ class FlatPuzzle {	//This object represents the puzzle in flat form. Mainly used
             return matrix;
         }
         
-        if(mat.length!=mat[0].length){
+        if(doubleTurn || mat.length!=mat[0].length){
             let A=mat.length;
             let B=mat[0].length;
             let ret=[];

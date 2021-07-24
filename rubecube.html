@@ -19,6 +19,7 @@
 			var keyDownFlag=false, animationFlag=false;;
 			var origin,originInv;
 			var dimensions=[3,3,3];
+            var light,light2;
 			var M,N,O;
 			var puzzleData = [];
 			var flatPuzzle;
@@ -29,7 +30,7 @@
 			var movesHistory = [];
 			var moveIndex=-1;
 			var flipSound=[];
-			
+			var puzzleName = '';
 			
 			let white = new BABYLON.Color4(1,1,1,1);
 			let yellow = new BABYLON.Color4(1,1,0,1);
@@ -77,6 +78,7 @@
 				M=dimensions[0];
 				N=dimensions[1];
 				O=dimensions[2];
+                puzzleName = `${M}x${N}x${O} puzzle`;
 				puzzleData = [];
 				animFrames=4;
 				animFPS=30;
@@ -123,8 +125,8 @@
 				//camera.attachControl(canvas, false);
 				
 
-				var light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(1,1,1), scene);
-				var light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(-1,-1,-1), scene);
+				light = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(1,1,1), scene);
+				light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(-1,-1,-1), scene);
 				
 				if(!saveStateData){
 					//origin.rotate(BABYLON.Axis.X, Math.PI/4, BABYLON.Space.WORLD);
@@ -429,11 +431,11 @@
 					
 					let mat=[];
 					if(evt.key=='f' || evt.key=='F' || evt.key=='b' || evt.key=='B'){			
-						puzzleMove('x',['f','F'].includes(evt.key) ? M-1 : 0,evt.key=='f' || evt.key=='B',false);
+						await puzzleMove('x',['f','F'].includes(evt.key) ? M-1 : 0,evt.key=='f' || evt.key=='B',false);
 					} else if(evt.key=='r' || evt.key=='R' || evt.key=='l' || evt.key=='L'){
-						puzzleMove('z',['r','R'].includes(evt.key) ? O-1 : 0,evt.key=='r' || evt.key=='L',false);
+						await puzzleMove('z',['r','R'].includes(evt.key) ? O-1 : 0,evt.key=='r' || evt.key=='L',false);
 					} else if(evt.key=='u' || evt.key=='U' || evt.key=='d' || evt.key=='D'){
-						puzzleMove('y',['u','U'].includes(evt.key) ? N-1 : 0,evt.key=='u' || evt.key=='D'.false);
+						await puzzleMove('y',['u','U'].includes(evt.key) ? N-1 : 0,evt.key=='u' || evt.key=='D'.false);
 					} else if(evt.key=='z'){
 						multiFlag = true;
 					} else if(evt.key=='T'){
@@ -503,19 +505,22 @@
 			function randomChoice(arr){
 				return arr[Math.floor(Math.random() * arr.length)];
 			}
-			function undoMove(){
+			async function undoMove(){
 				if(randomizeJobActive)return;
 				if(moveIndex>=0){
 					animFrames=2;
 					let moveToUndo = movesHistory[moveIndex];
 					//alert(""+moveToUndo.clockwise);
-					puzzleMove(moveToUndo.rAxis, moveToUndo.sliceIndex, ! moveToUndo.clockwise, true);
+					await puzzleMove(moveToUndo.rAxis, moveToUndo.sliceIndex, ! moveToUndo.clockwise, true);
 					moveIndex--;
 					//animFrames=4;
 				}
 			}
 			async function puzzleMove(rAxis,sliceIndex,clockwise, isUndoMove){
 				//alert('undo: ' + isUndoMove + ' clockwise: ' + clockwise + ' rAxis:' + rAxis);
+                if(rAxis=='x' && M==1)  return;
+                if(rAxis=='y' && N==1)  return;
+                if(rAxis=='z' && O==1)  return;
 				return new Promise(async function(resolve,reject){
 					cubeFlipSound();
 					const limit = Math.round(sliceIndex);
@@ -672,6 +677,12 @@
 							if(i>0 && i<M-1 && j>0 && j<N-1 && k>0 && k<O-1)continue;
 							let a=i-(M-1)/2, b = j-(N-1)/2, c = k-(O-1)/2;
 							let faceCol = [white,yellow,red,orange,green,blue];
+
+                            // let faceCol = [null,null,null,null,green,blue];
+                            // if(j==Math.floor(N/2)) faceCol = [white,white,white,white,green,blue]; 
+                            // else if(j<N/2) faceCol = [red,red,red,red,green,blue];
+                            // else if(j>N/2) faceCol = [orange,orange,orange,orange,green,blue];
+
 							//if(i==0&&j==0&&k==0) faceCol=[dark,dark,dark,dark,dark,dark];
 							//else if(i==1&&j==0&&k==0) faceCol=[dark,dark,dark,dark,dark,dark];
 							let boxId = `${i} ${j} ${k}`;
@@ -706,6 +717,8 @@
 							box.edgesWidth = 10.0;
 							box.edgesColor = new BABYLON.Color4(0,0,0,1);
 							box.position = new BABYLON.Vector3(a,b,c);
+                            // light.excludedMeshes.push(box);
+                            // light2.excludedMeshes.push(box);
 
 							puzzleData[i][j][k] = box;
 							box.actionManager = new BABYLON.ActionManager(scene);
@@ -848,7 +861,7 @@
 			}
 
 			function gameWon(){
-				alert("Congratulations, you solved the cube");
+				alert(`Congratulations, you solved the ${puzzleName}`);
 			}
 		</script>
 		<style>
