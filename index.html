@@ -1,7 +1,7 @@
 <html>
 	<head>
-		<script src='/res/babylon.js'></script>
-		<script src='/res/babylon.gui.min.js'></script>
+		<script src='/RubeCube/babylon.js'></script>
+		<script src='/RubeCube/babylon.gui.min.js'></script>
 		<script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js" integrity="sha384-LtrjvnR4Twt/qOuYxE721u19sVFLVSA4hf/rRt6PrZTmiPltdZcI7q7PXQBYTKyf" crossorigin="anonymous"></script>
@@ -9,7 +9,7 @@
 		
 		
 		<meta name="viewport" content="user-scalable=no" />
-		<script src='/res/flatPuzzle.js'></script>
+		<script src='/RubeCube/flatPuzzle.js'></script>
 
 		
 		<script>
@@ -88,7 +88,7 @@
 				scene = new BABYLON.Scene(engine);
 							
 				/*radial-gradient(rgb(255 255 255),rgb(78 124 255 / 60%))*/
-				var background = new BABYLON.Layer("back", '/res/gradient.png', scene);
+				var background = new BABYLON.Layer("back", '/RubeCube/gradient.png', scene);
 				
 				background.isBackground = true;
 				origin = new BABYLON.TransformNode("origin");
@@ -101,8 +101,8 @@
 					origin.rotationQuaternion = new BABYLON.Quaternion(qt._x,qt._y,qt._z,qt._w);
 				}
 				
-				flipSound[0] = new BABYLON.Sound("Flip0", "./res/sound.mp3", scene, function(){flipSound[0].play();});
-				flipSound[1] = new BABYLON.Sound("Flip1", "./res/sound2.mp3", scene, function(){flipSound[1].play();});
+				flipSound[0] = new BABYLON.Sound("Flip0", "./RubeCube/sound.mp3", scene, function(){flipSound[0].play();});
+				flipSound[1] = new BABYLON.Sound("Flip1", "./RubeCube/sound2.mp3", scene, function(){flipSound[1].play();});
 				scene.clearColor = new BABYLON.Color4(0,0,255,0.3);
 				
 				function renderLoop(){
