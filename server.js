@@ -3,16 +3,16 @@ const app = express()
 const port = process.env.PORT || 80
 
 app.get('/', (req, res) => {
-  res.sendFile('/rubecube.html' , { root : __dirname});
+  res.sendFile('/index.html' , { root : __dirname});
 })
-app.get('/gradient',(req,res)=>{
-  res.sendFile('/gradient.png' , { root : __dirname});
+app.get('/res/gradient.png',(req,res)=>{
+  res.sendFile('/res/gradient.png' , { root : __dirname});
 })
-app.get('/sound.wav',(req,res)=>{
+app.get('/sound.mp3',(req,res)=>{
   res.sendFile('/sound.mp3' , { root : __dirname});
 })
-app.get('/file/:file',(req,res)=>{
-  res.sendFile('/'+req.params.file , { root : __dirname});
+app.get('/res/:file',(req,res)=>{
+  res.sendFile('/res/'+req.params.file , { root : __dirname});
 })
 
 app.listen(port, () => {
